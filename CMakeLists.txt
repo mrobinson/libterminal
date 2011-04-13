@@ -1,5 +1,6 @@
 project(ptylink)
 cmake_minimum_required(VERSION 2.8)
+find_package (Threads)
 
 # SET(CMAKE_BUILD_TYPE Debug)
 
@@ -10,11 +11,12 @@ set(ptylink_sources
     src/pty.cpp
     src/main.cpp)
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Werror")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Werror -lpthread")
 
-SET(CMAKE_CXX_FLAGS_RELEASE "-O2 -Wall -Werror")
+SET(CMAKE_CXX_FLAGS_RELEASE "-O2 -Wall -Werror -lpthread")
 
 ADD_EXECUTABLE(ptylink ${ptylink_headers} ${ptylink_sources})
+TARGET_LINK_LIBRARIES(ptylink ${CMAKE_THREAD_LIBS_INIT}) 
 
 set(test_vt100_sources 
     build/VT100.cpp

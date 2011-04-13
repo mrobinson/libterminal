@@ -25,6 +25,7 @@ enum PtyUnputResult {
 };
 
 const int PTY_BUFFER_SIZE = 1024;
+const int PTY_READ_BUFFER_SIZE = 10240;
 
 class Pty {
 public:
@@ -35,17 +36,15 @@ public:
     PtyInitResult init(const std::string& pathToExecutable);
     int ptyWrite(const char* buffer, const int count);
     int putChar(const char character);
-    int ptyRead(char* buffer, const int maxCount);
+    void readProcessor();
     PtyUnputResult unPut(int count);
 
     void readWriteLoop();
 
-    char* getReadStart();
     char* getReadEnd();
     char* getWriteStart();
     char* getWriteEnd();
 
-    void setReadStart(char* value);
     void setReadEnd(char* value);
     void setWriteStart(char* value);
     void setWriteEnd(char* value);
@@ -58,9 +57,7 @@ private:
     char* readEnd;
     char* writeStart;
     char* writeEnd;
-    int runLoop;
 
-    pthread_mutex_t readStartMutex;
     pthread_mutex_t readEndMutex;
     pthread_mutex_t writeStartMutex;
     pthread_mutex_t writeEndMutex;
