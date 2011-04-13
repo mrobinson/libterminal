@@ -1,7 +1,3 @@
-/*
- * Parse a VT100/VT220 stream.
- */
-
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
@@ -12,10 +8,10 @@
     write data;
 }%%
 
-char* execute(char* buffer)
+const char* execute(const char* start, const char* end)
 {
-    char* p = buffer;
-    char* pe = buffer + strlen(buffer);
+    const char* p = start;
+    const char* pe = end;
     int cs;
 
     std::string param;
@@ -40,13 +36,14 @@ char* execute(char* buffer)
     return p;
 };
 
-void parseBuffer(char* buffer)
+const char* parseBuffer(const char* start, const char* end)
 {
-    while (*buffer) {
-        buffer = execute(buffer);
-        if (*buffer) {
-            printf("Saw other char: %c\n", *buffer);
-            buffer++;
+    while (start != end) {
+        start = execute(start, end);
+        if (start != end) {
+            printf("Saw other char: %c\n", *start);
+            start++;
         }
     }
+    return start;
 }
