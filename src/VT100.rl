@@ -14,21 +14,21 @@ const char* execute(const char* start, const char* end)
     const char* pe = end;
     int cs;
 
-    std::string param;
-
     %%{
+        action consumeChar { printf("%c", *p); }
+        action semi { printf(";\n"); }
+        action colorChangeAction { printf(" <-- color change \n"); }
+        action resetMode { printf(" <-- resetMode \n"); }
+
+        number = digit+ @consumeChar;
+        multiple_numeric_parameters = number (';'@semi number)+;
+
         CSI = 0x1B '[';
-
-        action appendParameterChar { param += fc; }
-        action printNumericParamter { printf("\t%s\n", param.c_str()); param = ""; }
-        numeric_parameter = digit+* $appendParameterChar;
-        multiple_numeric_parameters = numeric_parameter $printNumericParamter (';' numeric_parameter)*;
-
-        color_change = CSI multiple_numeric_parameters 'm' @{ printf("Color change\n"); };
-        reset_mode = CSI multiple_numeric_parameters 'l' @{ printf("Reset mode\n"); };
-        command = color_change | reset_mode;
-
+        colorChange = CSI multiple_numeric_parameters 'm' @colorChangeAction;
+        resetMode = CSI multiple_numeric_parameters 'l' @resetMode;
+        command = colorChange | resetMode;
         main := command*;
+
         write init;
         write exec;
     }%%
@@ -40,6 +40,7 @@ const char* parseBuffer(const char* start, const char* end)
 {
     while (start != end) {
         start = execute(start, end);
+        printf("did one pass\n");
         if (start != end) {
             printf("Saw other char: %c\n", *start);
             start++;
