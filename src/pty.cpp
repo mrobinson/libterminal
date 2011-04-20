@@ -10,7 +10,7 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <pthread.h>
-#include <string.h>
+#include <cstring>
 
 extern char* parseBuffer(const char* p, const char* pe);
 
