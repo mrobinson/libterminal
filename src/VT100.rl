@@ -1,14 +1,22 @@
+#include "VT100.h"
+
+#include "VT100Client.h"
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
 #include <string>
+
+VT100::VT100(VT100Client* client)
+    : m_client(client)
+{
+}
 
 %%{
     machine terminal;
     write data;
 }%%
 
-const char* execute(const char* start, const char* end)
+const char* VT100::executeStateMachine(const char* start, const char* end)
 {
     const char* p = start;
     const char* pe = end;
@@ -36,12 +44,12 @@ const char* execute(const char* start, const char* end)
     return p;
 };
 
-const char* parseBuffer(const char* start, const char* end)
+const char* VT100::parseBuffer(const char* start, const char* end)
 {
     while (start != end) {
-        start = execute(start, end);
+        start = executeStateMachine(start, end);
         if (start != end) {
-            printf("Saw other char: %c\n", *start);
+            m_client->appendCharacter(*start);
             start++;
         }
     }

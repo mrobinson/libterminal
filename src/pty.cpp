@@ -1,5 +1,6 @@
 #include "pty.h"
 
+#include "VT100.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -12,8 +13,6 @@
 #include <pthread.h>
 #include <cstring>
 #include <iostream>
-
-extern char* parseBuffer(const char* p, const char* pe);
 
 static std::string getUsersShell()
 {
@@ -30,8 +29,9 @@ static std::string getUsersShell()
     return std::string();
 }
 
-Pty::Pty()
-    : masterfd(-1)
+Pty::Pty(VT100* emulator)
+    : emulator(emulator)
+    , masterfd(-1)
 {
     std::string shellPath = getUsersShell();
     if (shellPath.empty()) {
@@ -248,7 +248,6 @@ int Pty::getBufferUsedSpace(const char* buffer, const char* start,
 void Pty::readWriteLoop() {
     int amount;
     char* readCheckpoint;
-    int checkerTest = 0;
     void *tmp, *tmp2;
 
     while(true) {
@@ -260,12 +259,7 @@ void Pty::readWriteLoop() {
         }
 
         if(this->readEnd != this->readStart) {
-            if((checkerTest++ % 2 == 0)){
-                readCheckpoint = parseBuffer(this->readStart, this->readEnd - 2);
-            }
-            else {
-                readCheckpoint = parseBuffer(this->readStart, this->readEnd);
-            }
+            readCheckpoint = const_cast<char*>(this->emulator->parseBuffer(this->readStart, this->readEnd));
             if(readCheckpoint == this->readEnd) {
                 this->readEnd = this->readBuffer;
                 this->readStart = this->readBuffer;

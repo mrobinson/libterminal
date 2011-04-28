@@ -25,9 +25,11 @@ enum PtyUnputResult {
 const int PTY_BUFFER_SIZE = 1024;
 const int PTY_READ_BUFFER_SIZE = 1024;
 
+class VT100;
+
 class Pty {
 public:
-    Pty();
+    Pty(VT100* emulator);
     ~Pty();
     PtyInitResult init(const std::string& pathToExecutable);
     int ptyWrite(const char* buffer, const int count);
@@ -42,6 +44,7 @@ public:
     int masterfd;
 
 private:
+    VT100* emulator;
     char* readBuffer;
     char* writeBuffer;
     char* readStart;
