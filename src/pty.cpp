@@ -15,31 +15,52 @@
 
 extern char* parseBuffer(const char* p, const char* pe);
 
-namespace Pecera
+static std::string getUsersShell()
 {
+    // getpwuid isn't reentrant
+    struct passwd* pass = getpwuid(getuid());
+    if ((pass != NULL) && (pass->pw_shell != NULL)) {
+        return pass->pw_shell;
+    }
+
+    if (char* shellEnv = getenv("SHELL")) {
+        return shellEnv;
+    }
+
+    return std::string();
+}
 
 Pty::Pty()
+    : masterfd(-1)
 {
+    std::string shellPath = getUsersShell();
+    if (shellPath.empty()) {
+        fprintf(stderr, "Could not find your shell.");
+        exit(ERROR_GET_USERS_SHELL);
+    }
+
+    init(shellPath);
+    initializeReadWriteLoop();
+    readProcessor();
 }
 
 Pty::~Pty()
 {
-    this->masterfd = -1;
+}
+
+static void* runReadWriteLoopThread(void* pty)
+{
+    static_cast<Pty*>(pty)->readWriteLoop();
+}
+
+void Pty::initializeReadWriteLoop()
+{
+    pthread_create(&readWriteThread, NULL, runReadWriteLoopThread, this);
 }
 
 void Pty::closeMasterFd() {
     close(this->masterfd);
     this->masterfd = -1;
-}
-
-PtyInitResult Pty::init() {
-    std::string* pathToExecute = Pty::getUsersShell();
-    if(pathToExecute == NULL) {
-        return ERROR_GET_USERS_SHELL;
-    }
-    PtyInitResult result = init(*pathToExecute);
-    free(pathToExecute);
-    return result;
 }
 
 PtyInitResult Pty::init(const std::string& pathToExecutable) {
@@ -174,22 +195,6 @@ PtyInitResult Pty::init(const std::string& pathToExecutable) {
 }
 
 
-
-std::string* Pty::getUsersShell() {
-    // getpwuid isn't reentrant
-    struct passwd *pass;
-    pass = getpwuid(getuid());
-    if((pass != NULL) && (pass->pw_shell != NULL)) {
-        return new std::string(pass->pw_shell);
-    }
-
-    char* shellEnv = getenv("SHELL");
-    if(shellEnv != NULL) {
-        return new std::string(shellEnv);
-    }
-
-    return NULL;
-}
 
 int Pty::ptyWrite(const char* buffer, const int count) {
     // rules:
@@ -396,5 +401,3 @@ void Pty::setWriteEnd(char* value) {
     this->writeEnd = value;
     pthread_mutex_unlock(&this->writeEndMutex);
 }
-
-};

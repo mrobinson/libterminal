@@ -4,8 +4,6 @@
 #include <string>
 #include <pthread.h>
 
-namespace Pecera {
-
 enum PtyInitResult {
     SUCCESS,
     ERROR_GET_USERS_SHELL,
@@ -31,8 +29,6 @@ class Pty {
 public:
     Pty();
     ~Pty();
-    static std::string* getUsersShell();
-    PtyInitResult init();
     PtyInitResult init(const std::string& pathToExecutable);
     int ptyWrite(const char* buffer, const int count);
     int putChar(const char character);
@@ -61,12 +57,12 @@ private:
     pthread_mutex_t readEndMutex;
     pthread_mutex_t writeStartMutex;
     pthread_mutex_t writeEndMutex;
+    pthread_t readWriteThread;
 
     void closeMasterFd();
     int getBufferFreeSpace(const char* buffer, const char* start, const char* end);
     int getBufferUsedSpace(const char* buffer, const char* start, const char* end);
-};
-
+    void initializeReadWriteLoop();
 };
 
 #endif
