@@ -11,6 +11,7 @@
 #include <sys/ioctl.h>
 #include <pthread.h>
 #include <cstring>
+#include <iostream>
 
 extern char* parseBuffer(const char* p, const char* pe);
 
@@ -21,13 +22,9 @@ Pty::Pty()
 {
 }
 
-Pty::~Pty() 
+Pty::~Pty()
 {
     this->masterfd = -1;
-    this->readStart = readBuffer;
-    this->readEnd = readBuffer;
-    this->writeStart = writeBuffer + 1;
-    this->writeEnd = writeBuffer;
 }
 
 void Pty::closeMasterFd() {
@@ -53,6 +50,10 @@ PtyInitResult Pty::init(const std::string& pathToExecutable) {
 
     this->readBuffer = (char*)malloc(PTY_READ_BUFFER_SIZE);
     this->writeBuffer = (char*)malloc(PTY_BUFFER_SIZE);
+    this->readStart = this->readBuffer;
+    this->readEnd = this->readBuffer;
+    this->writeStart = this->writeBuffer + 1;
+    this->writeEnd = this->writeBuffer;
 
     // TODO: add some code to not fork is pathToExecutable is invalid.
     int interactive = isatty(STDIN_FILENO);
@@ -146,13 +147,21 @@ PtyInitResult Pty::init(const std::string& pathToExecutable) {
             printf("ERROR: dup2 stdin\n");
             exit(EXIT_FAILURE);
         }
+
         if(dup2(slavefd, STDOUT_FILENO) != STDOUT_FILENO) {
             printf("ERROR: dup2 stdout\n");
             exit(EXIT_FAILURE);
         }
+
+        std::cerr << "3 " << slavefd << ":" << STDERR_FILENO << std::endl;
         if(dup2(slavefd, STDERR_FILENO) != STDERR_FILENO) {
             printf("ERROR: dup2 stderr\n");
             exit(EXIT_FAILURE);
+        }
+
+        if (slavefd != STDIN_FILENO && slavefd != STDOUT_FILENO &&
+            slavefd != STDERR_FILENO) {
+            close(slavefd);
         }
 
         execlp(pathToExecutable.c_str(), pathToExecutable.c_str(), NULL);
@@ -163,6 +172,8 @@ PtyInitResult Pty::init(const std::string& pathToExecutable) {
 
     return SUCCESS;
 }
+
+
 
 std::string* Pty::getUsersShell() {
     // getpwuid isn't reentrant
@@ -234,8 +245,14 @@ void Pty::readProcessor() {
     char* readCheckpoint;
     char* readEndpoint;
     while(true) {
+        //pthread_yield();
+        sleep(1);
+
         readEndpoint = this->getReadEnd();
-        readCheckpoint = parseBuffer(this->readStart, readEndpoint);
+        if(readEndpoint - this->readStart > 0) {
+            readCheckpoint = parseBuffer(this->readStart, readEndpoint);
+            std::cout << "Amount read: " << (readCheckpoint - this->readStart) << std::endl;
+        }
 
         if(readCheckpoint >
             this->readBuffer + (3 * PTY_READ_BUFFER_SIZE / 4)) {
@@ -250,18 +267,44 @@ void Pty::readProcessor() {
         else {
             this->readStart = readCheckpoint;
         }
-        pthread_yield();
     }
 }
 
 void Pty::readWriteLoop() {
     int space, amount;
     char *rE, *newRE, *wS;
+    void *tmp, *tmp2;
 
-   while(true) {
+    int amt;
+    char* buf = (char*)malloc(100);
+    while(true) {
+        rE = this->getReadEnd();
+
+        amount = read(this->masterfd, rE,
+            PTY_READ_BUFFER_SIZE - (rE - this->readBuffer));
+
+        pthread_mutex_lock(&this->readEndMutex);
+        if(amount > 0) {
+            if(rE != this->readEnd) {
+                tmp = rE;
+                tmp2 = this->readEnd;
+                std::cout << "B - readEnd Changed: " << tmp << " -> " << tmp2 << std::endl;
+                memcpy(this->readEnd, rE, amount);
+            }
+            this->readEnd = this->readEnd + amount;
+            std::cout << "Read amount: " << amount << std::endl;
+        }
+        pthread_mutex_unlock(&this->readEndMutex);
+
+        //pthread_yield();
+        sleep(1);
+    }
+/*
         rE = this->getReadEnd();
         amount = read(this->masterfd, rE,
             PTY_READ_BUFFER_SIZE - (rE - this->readBuffer));
+        if(amount > 0)
+            std::cout << "Read: " << amount << std::endl;
         pthread_mutex_lock(&this->readEndMutex);
         if(rE != this->readEnd) {
             this->readEnd = this->readEnd + amount;
@@ -298,6 +341,7 @@ void Pty::readWriteLoop() {
 
         pthread_yield();
     }
+*/
 }
 
 char* Pty::getReadEnd() {
