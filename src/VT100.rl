@@ -40,7 +40,6 @@ const char* parseBuffer(const char* start, const char* end)
 {
     while (start != end) {
         start = execute(start, end);
-        printf("did one pass\n");
         if (start != end) {
             printf("Saw other char: %c\n", *start);
             start++;
