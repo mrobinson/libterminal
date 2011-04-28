@@ -4,12 +4,20 @@ find_package (Threads)
 
 # SET(CMAKE_BUILD_TYPE Debug)
 
-set(ptylink_headers src/pty.h)
+
+include_directories(src)
+
+set(ptylink_headers
+    src/pty.h
+    src/VT100.h
+    src/VT100Client.h
+    src/SimpleVT100Client.h)
 
 set(ptylink_sources 
     build/VT100.cpp
     src/pty.cpp
-    src/main.cpp)
+    src/SimpleVT100Client.cpp
+    src/ptylink/main.cpp)
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Werror -lpthread")
 
@@ -20,6 +28,7 @@ TARGET_LINK_LIBRARIES(ptylink ${CMAKE_THREAD_LIBS_INIT})
 
 set(test_vt100_sources 
     build/VT100.cpp
+    src/SimpleVT100Client.cpp
     src/test/VT100Harness.cpp)
 ADD_EXECUTABLE(test-vt100 ${test_vt100_sources})
 
