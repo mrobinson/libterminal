@@ -244,13 +244,22 @@ int Pty::getBufferUsedSpace(const char* buffer, const char* start,
 void Pty::readProcessor() {
     char* readCheckpoint;
     char* readEndpoint;
+    void *tmp, *tmp2;
     while(true) {
         //pthread_yield();
         sleep(1);
 
         readEndpoint = this->getReadEnd();
-        if(readEndpoint - this->readStart > 0) {
+        readCheckpoint = this->readStart;
+
+        if((readEndpoint - this->readStart) > 0) {
+            tmp = this->readStart;
+            tmp2 = readEndpoint;
+            std::cout << "start: " << tmp << " end: " << tmp2 << " = " << (this->readStart - readEndpoint) << std::endl;
+
+
             readCheckpoint = parseBuffer(this->readStart, readEndpoint);
+
             std::cout << "Amount read: " << (readCheckpoint - this->readStart) << std::endl;
         }
 
@@ -271,12 +280,11 @@ void Pty::readProcessor() {
 }
 
 void Pty::readWriteLoop() {
-    int space, amount;
-    char *rE, *newRE, *wS;
+    int amount;
+    //int space;
+    char *rE; //*wS
     void *tmp, *tmp2;
 
-    int amt;
-    char* buf = (char*)malloc(100);
     while(true) {
         rE = this->getReadEnd();
 
@@ -293,6 +301,9 @@ void Pty::readWriteLoop() {
             }
             this->readEnd = this->readEnd + amount;
             std::cout << "Read amount: " << amount << std::endl;
+            tmp = rE;
+            tmp2 = this->readEnd;
+            std::cout << "rE: " << tmp << "readEnd: " << tmp2 << std::endl;
         }
         pthread_mutex_unlock(&this->readEndMutex);
 

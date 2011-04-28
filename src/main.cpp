@@ -4,6 +4,7 @@
 
 void *readWriteThread(void* voidPty) {
     ((Pecera::Pty*)voidPty)->readWriteLoop();
+    return NULL;
 }
 
 int main(int argc, char** argv) {
@@ -18,4 +19,5 @@ int main(int argc, char** argv) {
     //pthread_create(&read_write_thread, NULL, readWriteThread, pty);
 
     pty->readProcessor();
+    return 0;
 }
