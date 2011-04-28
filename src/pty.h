@@ -23,7 +23,7 @@ enum PtyUnputResult {
 };
 
 const int PTY_BUFFER_SIZE = 1024;
-const int PTY_READ_BUFFER_SIZE = 10240;
+const int PTY_READ_BUFFER_SIZE = 1024;
 
 class Pty {
 public:
@@ -35,16 +35,13 @@ public:
 
     void readWriteLoop();
 
-    char* getReadEnd();
     char* getWriteStart();
     char* getWriteEnd();
-
-    void setReadEnd(char* value);
     void setWriteStart(char* value);
     void setWriteEnd(char* value);
+    int masterfd;
 
 private:
-    int masterfd;
     char* readBuffer;
     char* writeBuffer;
     char* readStart;
@@ -52,7 +49,6 @@ private:
     char* writeStart;
     char* writeEnd;
 
-    pthread_mutex_t readEndMutex;
     pthread_mutex_t writeStartMutex;
     pthread_mutex_t writeEndMutex;
     pthread_t readWriteThread;

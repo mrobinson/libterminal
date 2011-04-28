@@ -65,7 +65,6 @@ void Pty::closeMasterFd() {
 
 PtyInitResult Pty::init(const std::string& pathToExecutable) {
     // todo: check?
-    pthread_mutex_init(&this->readEndMutex, NULL);
     pthread_mutex_init(&this->writeStartMutex, NULL);
     pthread_mutex_init(&this->writeEndMutex, NULL);
 
@@ -249,35 +248,40 @@ int Pty::getBufferUsedSpace(const char* buffer, const char* start,
 void Pty::readWriteLoop() {
     int amount;
     char* readCheckpoint;
-    //void *tmp, *tmp2;
+    int checkerTest = 0;
+    void *tmp, *tmp2;
 
     while(true) {
         amount = read(this->masterfd, this->readEnd,
             PTY_READ_BUFFER_SIZE - (this->readEnd - this->readBuffer));
         
-        //std::cout << "Total space available: " << (PTY_READ_BUFFER_SIZE - (this->readEnd - this->readBuffer)) << " vs " << PTY_READ_BUFFER_SIZE << std::endl;
-        //sleep(1);
-
         if(amount > 0) {
             this->readEnd = this->readEnd + amount;
-            //std::cout << "Read amount: " << amount << std::endl;
-            //sleep(1);
         }
 
         if(this->readEnd != this->readStart) {
-            readCheckpoint = parseBuffer(this->readStart, this->readEnd);
+            if((checkerTest++ % 2 == 0)){
+                readCheckpoint = parseBuffer(this->readStart, this->readEnd - 2);
+            }
+            else {
+                readCheckpoint = parseBuffer(this->readStart, this->readEnd);
+            }
             if(readCheckpoint == this->readEnd) {
-                //std::cout << "equal:" << std::endl;
                 this->readEnd = this->readBuffer;
                 this->readStart = this->readBuffer;
             }
             else {
                 this->readStart = readCheckpoint;
-                //std::cout << "check:" << std::endl;
+                if((this->readStart != this->readBuffer) &&
+                    (this->readStart - this->readBuffer > PTY_READ_BUFFER_SIZE - 200)) {
+                    memcpy(this->readBuffer, this->readStart, this->readEnd - this->readStart);
+                    this->readEnd = this->readBuffer + 
+                        (this->readEnd - this->readStart);
+                    this->readStart = this->readBuffer;
+                }
             }
         }
 
-        //sleep(1);
         pthread_yield();
     }
 /*
@@ -325,14 +329,6 @@ void Pty::readWriteLoop() {
 */
 }
 
-char* Pty::getReadEnd() {
-    char* value;
-    pthread_mutex_lock(&this->readEndMutex);
-    value = this->readEnd;
-    pthread_mutex_unlock(&this->readEndMutex);
-    return value;
-}
-
 char* Pty::getWriteStart() {
     char* value;
     pthread_mutex_lock(&this->writeStartMutex);
@@ -347,12 +343,6 @@ char* Pty::getWriteEnd() {
     value = this->writeEnd;
     pthread_mutex_unlock(&this->writeEndMutex);
     return value;
-}
-
-void Pty::setReadEnd(char* value) {
-    pthread_mutex_lock(&this->readEndMutex);
-    this->readEnd = value;
-    pthread_mutex_unlock(&this->readEndMutex);
 }
 
 void Pty::setWriteStart(char* value) {
