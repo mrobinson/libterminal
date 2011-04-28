@@ -241,74 +241,39 @@ int Pty::getBufferUsedSpace(const char* buffer, const char* start,
     return PTY_BUFFER_SIZE - this->getBufferFreeSpace(buffer, start, end) - 2;
 }
 
-void Pty::readProcessor() {
-    char* readCheckpoint;
-    char* readEndpoint;
-    void *tmp, *tmp2;
-    while(true) {
-        //pthread_yield();
-        sleep(1);
-
-        readEndpoint = this->getReadEnd();
-        readCheckpoint = this->readStart;
-
-        if((readEndpoint - this->readStart) > 0) {
-            tmp = this->readStart;
-            tmp2 = readEndpoint;
-            std::cout << "start: " << tmp << " end: " << tmp2 << " = " << (this->readStart - readEndpoint) << std::endl;
-
-
-            readCheckpoint = parseBuffer(this->readStart, readEndpoint);
-
-            std::cout << "Amount read: " << (readCheckpoint - this->readStart) << std::endl;
-        }
-
-        if(readCheckpoint >
-            this->readBuffer + (3 * PTY_READ_BUFFER_SIZE / 4)) {
-            pthread_mutex_lock(&this->readEndMutex);
-            memcpy(this->readBuffer, readCheckpoint,
-                this->readEnd - readCheckpoint);
-            this->readStart = this->readBuffer;
-            this->readEnd = this->readBuffer +
-                (this->readEnd - readCheckpoint);
-            pthread_mutex_unlock(&this->readEndMutex);
-        }
-        else {
-            this->readStart = readCheckpoint;
-        }
-    }
-}
-
 void Pty::readWriteLoop() {
     int amount;
-    //int space;
-    char *rE; //*wS
-    void *tmp, *tmp2;
+    char* readCheckpoint;
+    //void *tmp, *tmp2;
 
     while(true) {
-        rE = this->getReadEnd();
+        amount = read(this->masterfd, this->readEnd,
+            PTY_READ_BUFFER_SIZE - (this->readEnd - this->readBuffer));
+        
+        //std::cout << "Total space available: " << (PTY_READ_BUFFER_SIZE - (this->readEnd - this->readBuffer)) << " vs " << PTY_READ_BUFFER_SIZE << std::endl;
+        //sleep(1);
 
-        amount = read(this->masterfd, rE,
-            PTY_READ_BUFFER_SIZE - (rE - this->readBuffer));
-
-        pthread_mutex_lock(&this->readEndMutex);
         if(amount > 0) {
-            if(rE != this->readEnd) {
-                tmp = rE;
-                tmp2 = this->readEnd;
-                std::cout << "B - readEnd Changed: " << tmp << " -> " << tmp2 << std::endl;
-                memcpy(this->readEnd, rE, amount);
-            }
             this->readEnd = this->readEnd + amount;
-            std::cout << "Read amount: " << amount << std::endl;
-            tmp = rE;
-            tmp2 = this->readEnd;
-            std::cout << "rE: " << tmp << "readEnd: " << tmp2 << std::endl;
+            //std::cout << "Read amount: " << amount << std::endl;
+            //sleep(1);
         }
-        pthread_mutex_unlock(&this->readEndMutex);
 
-        //pthread_yield();
-        sleep(1);
+        if(this->readEnd != this->readStart) {
+            readCheckpoint = parseBuffer(this->readStart, this->readEnd);
+            if(readCheckpoint == this->readEnd) {
+                //std::cout << "equal:" << std::endl;
+                this->readEnd = this->readBuffer;
+                this->readStart = this->readBuffer;
+            }
+            else {
+                this->readStart = readCheckpoint;
+                //std::cout << "check:" << std::endl;
+            }
+        }
+
+        //sleep(1);
+        pthread_yield();
     }
 /*
         rE = this->getReadEnd();
