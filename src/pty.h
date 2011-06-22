@@ -37,23 +37,30 @@ public:
 
     void readWriteLoop();
 
-    char* getWriteStart();
-    char* getWriteEnd();
-    void setWriteStart(char* value);
-    void setWriteEnd(char* value);
     int masterfd;
 
 private:
     VT100* emulator;
     char* readBuffer;
-    char* writeBuffer;
     char* readStart;
     char* readEnd;
+
+    char* writeBuffer;
     char* writeStart;
     char* writeEnd;
+    char* writeHead;
+
+    char* getWriteStart();
+    char* getWriteEnd();
+    char* getWriteHead();
+    void setWriteStart(char* value);
+    void setWriteEnd(char* value);
+    void setWriteHead(char* value);
+    void resetWritePointers();
 
     pthread_mutex_t writeStartMutex;
     pthread_mutex_t writeEndMutex;
+    pthread_mutex_t writeHeadMutex;
     pthread_t readWriteThread;
 
     void closeMasterFd();

@@ -18,6 +18,7 @@ int main(int argc, char** argv)
         amount = read(STDIN_FILENO, buf, BUFFSIZE);
         towrite = amount;
         while(towrite > 0) {
+            pty->ptyWrite(buf + (amount - towrite), towrite);
             wamount = write(pty->masterfd, buf + (amount - towrite), towrite);
             towrite = towrite - wamount;
         }
