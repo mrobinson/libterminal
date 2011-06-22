@@ -5,6 +5,13 @@
 #include <cstring>
 #include <cstdio>
 #include <string>
+#include <vector>
+
+static void printAllNumbers(std::vector<int>& numbers)
+{
+    for (size_t i = 0; i < numbers.size(); i++)
+        printf(" %i", numbers[i]);
+}
 
 VT100::VT100(VT100Client* client)
     : m_client(client)
@@ -22,19 +29,28 @@ const char* VT100::executeStateMachine(const char* start, const char* end)
     const char* pe = end;
     int cs;
 
-    %%{
-        action consumeChar { printf("%c", *p); }
-        action semi { printf(";\n"); }
-        action colorChangeAction { printf(" <-- color change \n"); }
-        action resetMode { printf(" <-- resetMode \n"); }
+    int unsignedValue;
+    std::vector<int> numberStack;
 
-        number = digit+ @consumeChar;
-        multiple_numeric_parameters = number (';'@semi number)+;
+    %%{
+        action colorChangeAction { printf(" <-- color change"); printAllNumbers(numberStack); printf("\n"); }
+        action resetMode { printf(" <-- resetMode"); printAllNumbers(numberStack); printf("\n"); }
+        action setTitle { printf(" <-- setTitle \n"); }
+
+        unsigned_number = digit+
+                > { unsignedValue = 0; } 
+                $ { unsignedValue = (unsignedValue * 10) + (fc - '0'); }
+                % { numberStack.push_back(unsignedValue); };
+        multiple_numeric_parameters = unsigned_number > { numberStack.clear(); } (';' unsigned_number )+;
 
         CSI = 0x1B '[';
+        OSC = 0x1B ']';
+
         colorChange = CSI multiple_numeric_parameters 'm' @colorChangeAction;
         resetMode = CSI multiple_numeric_parameters 'l' @resetMode;
-        command = colorChange | resetMode;
+        titleChange = OSC ('0' | '1' | '2' | '3' | '4') ';' any+ :> 0x07 @setTitle;
+
+        command = colorChange | resetMode | titleChange;
         main := command*;
 
         write init;

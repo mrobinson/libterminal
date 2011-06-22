@@ -4,7 +4,7 @@
 
 void SimpleVT100Client::appendCharacter(char character)
 {
-    printf("append char: %c\n", character);
+    printf("%c", character);
 }
 
 void SimpleVT100Client::changeColor(int, int)
