@@ -3,6 +3,7 @@
 
 #include <string>
 #include <pthread.h>
+#include <semaphore.h>
 
 enum PtyInitResult {
     SUCCESS,
@@ -62,6 +63,7 @@ private:
     pthread_mutex_t writeEndMutex;
     pthread_mutex_t writeHeadMutex;
     pthread_t readWriteThread;
+    sem_t loopMutex;
 
     void closeMasterFd();
     int getBufferFreeSpace(const char* buffer, const char* start, const char* end);

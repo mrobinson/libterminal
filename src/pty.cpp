@@ -45,6 +45,11 @@ Pty::Pty(VT100* emulator)
 
 Pty::~Pty()
 {
+    sem_wait(&this->loopMutex);
+    pthread_join(readWriteThread, NULL);
+    pthread_mutex_destroy(&this->writeStartMutex);
+    pthread_mutex_destroy(&this->writeEndMutex);
+    pthread_mutex_destroy(&this->writeHeadMutex);
 }
 
 static void* runReadWriteLoopThread(void* pty)
@@ -67,6 +72,7 @@ PtyInitResult Pty::init(const std::string& pathToExecutable) {
     // todo: check?
     pthread_mutex_init(&this->writeStartMutex, NULL);
     pthread_mutex_init(&this->writeEndMutex, NULL);
+    sem_init(&this->loopMutex, 0, 1);
 
     this->readBuffer = (char*)malloc(PTY_READ_BUFFER_SIZE);
     this->writeBuffer = (char*)malloc(PTY_BUFFER_SIZE);
@@ -252,10 +258,13 @@ int Pty::getBufferUsedSpace(const char* buffer, const char* start,
 }
 
 void Pty::readWriteLoop() {
-    int amount;
+    int amount, semval;
     char *readCheckpoint, *localWriteStart, *localWriteEnd;
 
     while(true) {
+        sem_getvalue(&this->loopMutex, &semval);
+        if(semval <= 0) return;
+
         amount = read(this->masterfd, this->readEnd,
             PTY_READ_BUFFER_SIZE - (this->readEnd - this->readBuffer));
         
@@ -303,6 +312,7 @@ void Pty::readWriteLoop() {
 
         pthread_yield();
     }
+    
 }
 
 char* Pty::getWriteStart() {
