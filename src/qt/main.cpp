@@ -1,6 +1,6 @@
-#include "pty.h"
 #include "VT100.h"
 #include "QtTerminalWindow.h"
+#include "pty.h"
 #include <cstdio>
 #include <QApplication>
 
@@ -10,9 +10,9 @@ int main(int argc, char** argv)
 
     QtTerminalWindow* window = new QtTerminalWindow();
     VT100 vt100(window);
+    Pty pty(&vt100);
 
-    Pty* pty = new Pty(&vt100);
-
+    window->setPty(&pty);
     window->show();
     return application.exec();
 }
