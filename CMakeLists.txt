@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 find_package (Threads)
 find_package(Qt4 REQUIRED)
 
-# SET(CMAKE_BUILD_TYPE Debug)
+ SET(CMAKE_BUILD_TYPE Debug)
 
 
 include_directories(src)
