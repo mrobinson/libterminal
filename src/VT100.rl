@@ -36,6 +36,7 @@ const char* VT100::executeStateMachine(const char* start, const char* end)
         action colorChangeAction { printf(" <-- color change"); printAllNumbers(numberStack); printf("\n"); }
         action resetMode { printf(" <-- resetMode"); printAllNumbers(numberStack); printf("\n"); }
         action setTitle { printf(" <-- setTitle \n"); }
+        action characterMode { printf(" <-- characterMode \n"); }
 
         unsigned_number = digit+
                 > { unsignedValue = 0; } 
@@ -47,10 +48,11 @@ const char* VT100::executeStateMachine(const char* start, const char* end)
         OSC = 0x1B ']';
 
         colorChange = CSI multiple_numeric_parameters 'm' @colorChangeAction;
+        characterMode = CSI unsigned_number? 'm' @characterMode;
         resetMode = CSI multiple_numeric_parameters 'l' @resetMode;
         titleChange = OSC ('0' | '1' | '2' | '3' | '4') ';' any+ :> 0x07 @setTitle;
 
-        command = colorChange | resetMode | titleChange;
+        command = colorChange | resetMode | titleChange | characterMode;
         main := command*;
 
         write init;
