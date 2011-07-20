@@ -259,7 +259,7 @@ int Pty::getBufferUsedSpace(const char* buffer, const char* start,
 
 void Pty::readWriteLoop() {
     int amount, semval;
-    char *readCheckpoint, *localWriteStart, *localWriteEnd;
+    char *localWriteStart, *localWriteEnd;
 
     while(true) {
         sem_getvalue(&this->loopMutex, &semval);
@@ -273,21 +273,9 @@ void Pty::readWriteLoop() {
         }
 
         if(this->readEnd != this->readStart) {
-            readCheckpoint = const_cast<char*>(this->emulator->parseBuffer(this->readStart, this->readEnd));
-            if(readCheckpoint == this->readEnd) {
-                this->readEnd = this->readBuffer;
-                this->readStart = this->readBuffer;
-            }
-            else {
-                this->readStart = readCheckpoint;
-                if((this->readStart != this->readBuffer) &&
-                    (this->readStart - this->readBuffer > PTY_READ_BUFFER_SIZE - 200)) {
-                    memcpy(this->readBuffer, this->readStart, this->readEnd - this->readStart);
-                    this->readEnd = this->readBuffer + 
-                        (this->readEnd - this->readStart);
-                    this->readStart = this->readBuffer;
-                }
-            }
+            this->emulator->parseBuffer(this->readStart, this->readEnd);
+            this->readEnd = this->readBuffer;
+            this->readStart = this->readBuffer;
         }
 
         localWriteStart = this->getWriteStart();
