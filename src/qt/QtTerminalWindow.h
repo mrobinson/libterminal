@@ -1,28 +1,33 @@
-#include "VT100Client.h"
-#include <QTextEdit>
+#include "LineOrientedVT100Client.h"
+#include <QFrame>
+#include <QPainter>
 
 class Pty;
 
-class QtTerminalWindow : public QTextEdit, public VT100Client {
+class QtTerminalWindow : public QFrame, public LineOrientedVT100Client {
     Q_OBJECT
 
 public:
     QtTerminalWindow();
     void setPty(Pty* pty) { m_pty = pty; }
-    virtual void appendCharacter(char character);
-    virtual void changeColor(int color1, int color2);
 
 protected:
     virtual void keyPressEvent(QKeyEvent* event);
 
+    virtual void characterAppended();
+    virtual void somethingLargeChanged();
+    void paintEvent(QPaintEvent*);
+    void renderLine(QPainter& painter, std::vector<TerminalContentNode*>* line, int& currentBaseline);
+
 private:
     Pty* m_pty;
     char m_previousCharacter;
+    QFontMetrics m_fontMetrics;
 
 signals:
-    void appendCharacterSignal(char character);
+    void updateNeeded();
 
 public slots:
-    void handleAppendCharacter(char character);
+    void handleUpdateNeeded();
 
 };
