@@ -22,7 +22,8 @@ protected:
 private:
     Pty* m_pty;
     char m_previousCharacter;
-    QFontMetrics m_fontMetrics;
+    QFontMetrics* m_fontMetrics;
+    QFont* m_font;
 
 signals:
     void updateNeeded();
