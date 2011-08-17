@@ -32,7 +32,10 @@ void LineOrientedVT100Client::appendCharacter(char character)
         appendNewLine();
         somethingLargeChanged();
     } else if (character != '\r') {
-        m_lines.back()->back()->appendCharacter(character);
+        if (!m_lines.back()->back()->appendCharacter(character)) {
+            m_lines.back()->push_back(new TerminalContentNode(TerminalContentNode::Text));
+            m_lines.back()->back()->appendCharacter(character);
+        }
         characterAppended();
     }
     m_previousCharacter = character;
