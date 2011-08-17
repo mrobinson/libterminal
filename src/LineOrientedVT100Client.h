@@ -1,6 +1,7 @@
 #include "TerminalContentNode.h"
 #include "VT100Client.h"
 #include <vector>
+#include <cstring>
 
 class LineOrientedVT100Client : public VT100Client {
 public:

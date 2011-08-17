@@ -29,8 +29,47 @@ static void printAllNumbers(std::vector<int>& numbers)
         m_client->appendCharacter(fc);
     }
 
+action resetDevice { printf(" <-- resetDevice \n"); }
+action enableLineWrap { printf(" <-- enableLineWrap \n"); }
+action disableLineWrap { printf(" <-- disableLineWrap \n"); }
+
+action eraseLineFromCursorRight { printf(" <-- eraseLineFromCursorRight \n"); }
+action eraseLineFromCursorLeft { printf(" <-- eraseLineFromCursorLeft \n"); }
+action eraseEntireLine { printf(" <-- eraseEntireLine \n"); }
+action eraseScreenFromCursorDown { printf(" <-- eraseScreenFromCursorDown \n"); }
+action eraseScreenFromCursorUp { printf(" <-- eraseScreenFromCursorUp \n"); }
+action eraseEntireScreen { printf(" <-- eraseEntireScreen \n"); }
+
     action errorState {
-        printf("error state: [%x]\n", fc);
+        const char* i = start;
+        printf("error state: [%x]-> %p,%p ->", fc, p, pe);
+        if(p < pe) {
+            for(i = start; i <= pe; i++) {
+                printf("[%x]", *i);
+            }
+            for(i = start; i <= pe; i++) {
+                if((*i >= 0x32) && (*i <= 0x7E)) {
+                    printf("{%c}", *i);
+                }
+                else {
+                    switch(*i) {
+                        case 0:
+                            printf("{NULL}");
+                            break;
+                        case 0x8:
+                            printf("{BackSpace}");
+                            break;
+                        case 0x1B:
+                            printf("{ESC}");
+                            break;
+                        default:
+                            printf("{todo!}");
+                            break;
+                    }
+                }
+            }
+            printf("\n");
+        }
         fhold; fgoto main;
     }
 
@@ -49,7 +88,23 @@ static void printAllNumbers(std::vector<int>& numbers)
     resetMode = CSI multiple_numeric_parameters 'l' @resetMode;
     titleChange = OSC ('0' | '1' | '2' | '3' | '4') ';' any+ :> 0x07 @setTitle;
 
-    command = colorChange | resetMode | titleChange | characterMode 
+    terminalSetup = 0x1B 'c' @resetDevice
+        | CSI '7' 'h' @enableLineWrap
+        | CSI '7' 'l' @disableLineWrap;
+
+    erase = 0x1B '[' '0'? 'K' @eraseLineFromCursorRight
+        | 0x1B '[' '1' 'K' @eraseLineFromCursorLeft
+        | 0x1B '[' '2' 'K' @eraseEntireLine
+        | 0x1B '[' '0'? 'J' @eraseScreenFromCursorDown
+        | 0x1B '[' '1' 'J' @eraseScreenFromCursorUp
+        | 0x1B '[' '2' 'J' @eraseEntireScreen;
+
+    command = colorChange 
+        | resetMode 
+        | titleChange 
+        | characterMode 
+        | terminalSetup
+        | erase
         | ^0x1B @appendChar;
 
     main := command* $err(errorState);
