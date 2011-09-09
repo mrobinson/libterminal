@@ -1,7 +1,5 @@
 #include "TerminalContentNode.h"
-
 #include <cstdio>
-#include <string>
 
 static const size_t g_textNodeBufferLength = 80;
 
@@ -26,4 +24,20 @@ bool TerminalContentNode::appendCharacter(char newCharacter)
     printf("appending %x '%c'\n", newCharacter, newCharacter);
     m_text[m_textLength++] = newCharacter;
     return true;
+}
+
+void TerminalContentNode::eraseFromPositionToEndOfLine(size_t position, Direction direction)
+{
+    if (m_textLength <= 0)
+        return;
+
+    // ASSERT(direction == Forward || direction == Backward);
+    if (direction == Right) {
+        m_textLength = position - 1;
+        printf("new text length: %li\n", m_textLength);
+        return;
+    }
+
+    m_textLength = m_textLength - position - 1;
+    memmove(m_text, m_text + position + 1, m_textLength);
 }

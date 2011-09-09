@@ -29,16 +29,16 @@ static void printAllNumbers(std::vector<int>& numbers)
         m_client->appendCharacter(fc);
     }
 
-action resetDevice { printf(" <-- resetDevice \n"); }
-action enableLineWrap { printf(" <-- enableLineWrap \n"); }
-action disableLineWrap { printf(" <-- disableLineWrap \n"); }
+    action resetDevice { printf(" <-- resetDevice \n"); }
+    action enableLineWrap { printf(" <-- enableLineWrap \n"); }
+    action disableLineWrap { printf(" <-- disableLineWrap \n"); }
 
-action eraseLineFromCursorRight { printf(" <-- eraseLineFromCursorRight \n"); }
-action eraseLineFromCursorLeft { printf(" <-- eraseLineFromCursorLeft \n"); }
-action eraseEntireLine { printf(" <-- eraseEntireLine \n"); }
-action eraseScreenFromCursorDown { printf(" <-- eraseScreenFromCursorDown \n"); }
-action eraseScreenFromCursorUp { printf(" <-- eraseScreenFromCursorUp \n"); }
-action eraseEntireScreen { printf(" <-- eraseEntireScreen \n"); }
+    action eraseInLineFromCursorToRight { m_client->eraseFromCursorToEndOfLine(Right); }
+    action eraseInLineFromCursorToLeft { m_client->eraseFromCursorToEndOfLine(Left); }
+    action eraseEntireLine { printf(" <-- eraseEntireLine \n"); }
+    action eraseScreenFromCursorDown { printf(" <-- eraseScreenFromCursorDown \n"); }
+    action eraseScreenFromCursorUp { printf(" <-- eraseScreenFromCursorUp \n"); }
+    action eraseEntireScreen { printf(" <-- eraseEntireScreen \n"); }
 
     action errorState {
         const char* i = start;
@@ -92,8 +92,8 @@ action eraseEntireScreen { printf(" <-- eraseEntireScreen \n"); }
         | CSI '7' 'h' @enableLineWrap
         | CSI '7' 'l' @disableLineWrap;
 
-    erase = 0x1B '[' '0'? 'K' @eraseLineFromCursorRight
-        | 0x1B '[' '1' 'K' @eraseLineFromCursorLeft
+    erase = 0x1B '[' '0'? 'K' @eraseInLineFromCursorToRight
+        | 0x1B '[' '1' 'K' @eraseInLineFromCursorToLeft
         | 0x1B '[' '2' 'K' @eraseEntireLine
         | 0x1B '[' '0'? 'J' @eraseScreenFromCursorDown
         | 0x1B '[' '1' 'J' @eraseScreenFromCursorUp

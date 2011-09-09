@@ -10,3 +10,7 @@ void SimpleVT100Client::appendCharacter(char character)
 void SimpleVT100Client::changeColor(int, int)
 {
 }
+
+void SimpleVT100Client::eraseFromCursorToEndOfLine(Direction direction)
+{
+}

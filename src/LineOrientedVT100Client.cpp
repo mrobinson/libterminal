@@ -4,6 +4,7 @@
 
 LineOrientedVT100Client::LineOrientedVT100Client()
     : m_previousCharacter('\0')
+    , m_cursorColumn(1)
 {
     m_lines.push_back(new std::vector<TerminalContentNode*>());
     m_lines.back()->push_back(new TerminalContentNode(TerminalContentNode::Text));
@@ -24,6 +25,13 @@ void LineOrientedVT100Client::appendNewLine()
 {
     m_lines.push_back(new std::vector<TerminalContentNode*>());
     m_lines.back()->push_back(new TerminalContentNode(TerminalContentNode::Text));
+    m_cursorColumn = 1;
+}
+
+void LineOrientedVT100Client::moveCursor(Direction direction, Granularity granularity)
+{
+    if (granularity == Character)
+        m_cursorColumn += direction;
 }
 
 void LineOrientedVT100Client::appendCharacter(char character)
@@ -31,7 +39,11 @@ void LineOrientedVT100Client::appendCharacter(char character)
     if (character == '\n' && m_previousCharacter == '\r') {
         appendNewLine();
         somethingLargeChanged();
+    } else if (character == '\b') {
+        printf("backspace\n");
+        moveCursor(Left, Character);
     } else if (character != '\r') {
+        moveCursor(Right, Character);
         if (!m_lines.back()->back()->appendCharacter(character)) {
             m_lines.back()->push_back(new TerminalContentNode(TerminalContentNode::Text));
             m_lines.back()->back()->appendCharacter(character);
@@ -54,4 +66,11 @@ std::vector<TerminalContentNode*>* LineOrientedVT100Client::lineAt(size_t line)
 size_t LineOrientedVT100Client::numberOfLines()
 {
     return m_lines.size();
+}
+
+void LineOrientedVT100Client::eraseFromCursorToEndOfLine(Direction direction)
+{
+    // ASSERT(direction == Forward || direction == Backward);
+    m_lines.back()->back()->eraseFromPositionToEndOfLine(m_cursorColumn, direction);
+    somethingLargeChanged();
 }
