@@ -1,3 +1,5 @@
+// -*- Mode: C; indent-tabs-mode: nil -*-
+
 #include "pty.h"
 
 #include "VT100.h"
@@ -30,7 +32,7 @@ static std::string getUsersShell()
 }
 
 Pty::Pty(VT100* emulator)
-    : masterfd(-1)
+    : masterfd_(-1)
     , emulator(emulator)
 {
     std::string shellPath = getUsersShell();
@@ -45,11 +47,9 @@ Pty::Pty(VT100* emulator)
 
 Pty::~Pty()
 {
-    sem_wait(&this->loopMutex);
+    sem_wait(&loopSemaphore_);
     pthread_join(readWriteThread, NULL);
-    pthread_mutex_destroy(&this->writeStartMutex);
-    pthread_mutex_destroy(&this->writeEndMutex);
-    pthread_mutex_destroy(&this->writeHeadMutex);
+    pthread_mutex_destroy(&writeMutex_);
 }
 
 static void* runReadWriteLoopThread(void* pty)
@@ -64,23 +64,19 @@ void Pty::initializeReadWriteLoop()
 }
 
 void Pty::closeMasterFd() {
-    close(this->masterfd);
-    this->masterfd = -1;
+    close(masterfd_);
+    masterfd_ = -1;
 }
 
 PtyInitResult Pty::init(const std::string& pathToExecutable) {
     // todo: check?
-    pthread_mutex_init(&this->writeStartMutex, NULL);
-    pthread_mutex_init(&this->writeEndMutex, NULL);
-    sem_init(&this->loopMutex, 0, 1);
+    pthread_mutex_init(&writeMutex_, NULL);
+    sem_init(&loopSemaphore_, 0, 1);
 
-    this->readBuffer = (char*)malloc(PTY_READ_BUFFER_SIZE);
-    this->writeBuffer = (char*)malloc(PTY_BUFFER_SIZE);
-    this->readStart = this->readBuffer;
-    this->readEnd = this->readBuffer;
-    this->writeStart = this->writeBuffer;
-    this->writeHead = this->writeBuffer;
-    this->writeEnd = this->writeBuffer;
+    readBuffer_ = (char*)malloc(PTY_READ_BUFFER_SIZE);
+
+    writeBuffer_ = (char*)malloc(PTY_BUFFER_SIZE);
+    writeEnd_ = writeBuffer_;
 
     // TODO: add some code to not fork is pathToExecutable is invalid.
     int interactive = isatty(STDIN_FILENO);
@@ -99,33 +95,33 @@ PtyInitResult Pty::init(const std::string& pathToExecutable) {
         }
     }
 
-    if((this->masterfd = posix_openpt(O_RDWR)) < 0) {
+    if((masterfd_ = posix_openpt(O_RDWR)) < 0) {
         return ERROR_OPENPT;
     }
 
     // grant access to the slave pseudo-terminal
-    if(grantpt(this->masterfd) < 0) {
+    if(grantpt(masterfd_) < 0) {
         this->closeMasterFd();
         return ERROR_GRANTPT;
     }
 
     // unlock a pseudo-terminal master/slave pair
-    if(unlockpt(this->masterfd) < 0) {
+    if(unlockpt(masterfd_) < 0) {
         this->closeMasterFd();
         return ERROR_UNLOCKPT;
     }
 
     // user the reentrant verstion of ptsname...
     // ptsname isn't reentrant
-    if((ptsNameStr = ptsname(masterfd)) == NULL) {
+    if((ptsNameStr = ptsname(masterfd_)) == NULL) {
         this->closeMasterFd();
         return ERROR_PTSNAME;
     }
 
     // set masterfd to nonblocking i/o
-    int statusFlagsResult = fcntl(masterfd, F_GETFL);
+    int statusFlagsResult = fcntl(masterfd_, F_GETFL);
     if ((statusFlagsResult != -1) && !(statusFlagsResult & O_NONBLOCK)) {
-        if(fcntl(this->masterfd, F_SETFL, statusFlagsResult | O_NONBLOCK) < 0) {
+        if(fcntl(masterfd_, F_SETFL, statusFlagsResult | O_NONBLOCK) < 0) {
             this->closeMasterFd();
             return ERROR_SET_NONBLOCK;
         }
@@ -201,157 +197,79 @@ PtyInitResult Pty::init(const std::string& pathToExecutable) {
 }
 
 int Pty::ptyWrite(const char* buffer, const int count) {
-    char *localWriteStart, *localWriteEnd, *localWriteHead;
-    int space;
-
-    if(count == 0) {
+    if (count <= 0) {
         return 0;
     }
 
-    localWriteEnd = this->getWriteEnd();
-    localWriteHead = this->getWriteHead();
-    
-    if(localWriteHead >= (this->writeBuffer + PTY_BUFFER_SIZE)) {
-        localWriteHead = this->writeBuffer;
-    }
+    pthread_mutex_lock(&writeMutex_);
 
-    if(localWriteHead >= localWriteEnd) {
-        space = (this->writeBuffer + PTY_BUFFER_SIZE) - localWriteHead;
-        space = space >= count? count : space;
-        memcpy(localWriteHead, buffer, space);
-        localWriteHead += space;
-        this->setWriteEnd(localWriteHead);
-        this->setWriteHead(localWriteHead);
-        return space + this->ptyWrite(buffer + space, count - space);
-    }
-    else {
-        localWriteStart = this->getWriteStart();
-        if(localWriteStart < localWriteHead) {
-            localWriteStart = this->writeBuffer + PTY_BUFFER_SIZE;
+    ssize_t writeCount = 0;
+    // if the buffer is empty, try to write
+
+    if (writeBuffer_ == writeEnd_) {
+        writeCount = write(masterfd_, buffer, count);
+        if(count == writeCount) {
+            pthread_mutex_unlock(&writeMutex_);
+            return count;
         }
-        space = localWriteStart - localWriteHead;
-        space = space >= count? count : space;
-        memcpy(localWriteHead, buffer, space);
-        localWriteHead += space;
-        this->setWriteHead(localWriteHead);
-        return space;
-    }     
+    }
 
-    // full buffer case.
+    // add to buffer anything that couldn't be written to the fd
+    int bufferSpace = PTY_BUFFER_SIZE - (writeEnd_ - writeBuffer_);
+    int toCopyAmount = count - writeCount;
+    if(toCopyAmount > bufferSpace) {
+        // @TODO log error out of buffer space
+        toCopyAmount = bufferSpace;
+    }
+
+    memcpy(writeEnd_, buffer + writeCount, toCopyAmount);
+    writeEnd_ += toCopyAmount;
+
+    pthread_mutex_unlock(&writeMutex_);
+    return toCopyAmount + writeCount;
 }
 
 int Pty::putChar(const char character) {
     return this->ptyWrite(&character, 1);
 }
 
-int Pty::getBufferFreeSpace(const char* buffer, const char* start,
-    const char* end) {
-    if(start < end)
-        return end - start - 1;
-    else
-        return end - start - 1 + PTY_BUFFER_SIZE;
-}
-
-int Pty::getBufferUsedSpace(const char* buffer, const char* start,
-    const char* end) {
-    return PTY_BUFFER_SIZE - this->getBufferFreeSpace(buffer, start, end) - 2;
-}
-
 void Pty::readWriteLoop() {
     int amount, semval;
-    char *localWriteStart, *localWriteEnd;
 
     while(true) {
-        sem_getvalue(&this->loopMutex, &semval);
+        sem_getvalue(&loopSemaphore_, &semval);
         if(semval <= 0) return;
 
-        amount = read(this->masterfd, this->readEnd,
-            PTY_READ_BUFFER_SIZE - (this->readEnd - this->readBuffer));
-        
+        amount = read(masterfd_, readBuffer_, PTY_READ_BUFFER_SIZE);
+
         if(amount > 0) {
-            this->readEnd = this->readEnd + amount;
+            this->emulator->parseBuffer(readBuffer_,
+                readBuffer_ + amount);
         }
 
-        if(this->readEnd != this->readStart) {
-            this->emulator->parseBuffer(this->readStart, this->readEnd);
-            this->readEnd = this->readBuffer;
-            this->readStart = this->readBuffer;
-        }
+        pthread_mutex_lock(&writeMutex_);
 
-        localWriteStart = this->getWriteStart();
-        localWriteEnd = this->getWriteEnd();
-        //char* wb;
-
-        if(localWriteStart != localWriteEnd) {
-            amount = write(this->masterfd, localWriteStart, 
-                localWriteEnd - localWriteStart);
-            if(amount > 0) {
-                localWriteStart = this->writeStart + amount;
-                if(localWriteStart >= (this->writeBuffer + PTY_BUFFER_SIZE)) {
-                    // writeStart can never be set as greater than
-                    this->resetWritePointers();
-                    continue;
-                }
-                else {
-                    this->setWriteStart(localWriteStart);
-                }
+        // if the buffer is empty, try to write
+        if (writeBuffer_ != writeEnd_) {
+            ssize_t totalWriteAvailable = writeEnd_ - writeBuffer_;
+            ssize_t writeCount =
+                write(masterfd_, writeBuffer_, totalWriteAvailable);
+            // didn't write it all, memmove to beginning
+            if(totalWriteAvailable != writeCount) {
+                memmove(writeBuffer_, writeBuffer_ + writeCount,
+                    totalWriteAvailable - writeCount);
+                // subtract the amount written from write end
+                writeEnd_ -= writeCount;
+            }
+            else {
+                // reset the write end;
+                writeEnd_ = writeBuffer_;
             }
         }
 
+        pthread_mutex_unlock(&writeMutex_);
+
         pthread_yield();
     }
-    
-}
 
-char* Pty::getWriteStart() {
-    char* value;
-    pthread_mutex_lock(&this->writeStartMutex);
-    value = this->writeStart;
-    pthread_mutex_unlock(&this->writeStartMutex);
-    return value;
 }
-
-char* Pty::getWriteHead() {
-    char* value;
-    pthread_mutex_lock(&this->writeHeadMutex);
-    value = this->writeHead;
-    pthread_mutex_unlock(&this->writeHeadMutex);
-    return value;
-}
-
-char* Pty::getWriteEnd() {
-    char* value;
-    pthread_mutex_lock(&this->writeEndMutex);
-    value = this->writeEnd;
-    pthread_mutex_unlock(&this->writeEndMutex);
-    return value;
-}
-
-void Pty::setWriteStart(char* value) {
-    pthread_mutex_lock(&this->writeStartMutex);
-    this->writeStart = value;
-    pthread_mutex_unlock(&this->writeStartMutex);
-}
-
-void Pty::setWriteEnd(char* value) {
-    pthread_mutex_lock(&this->writeEndMutex);
-    this->writeEnd = value;
-    pthread_mutex_unlock(&this->writeEndMutex);
-}
-
-void Pty::setWriteHead(char* value) {
-    pthread_mutex_lock(&this->writeHeadMutex);
-    this->writeHead = value;
-    pthread_mutex_unlock(&this->writeHeadMutex);
-}
-
-void Pty::resetWritePointers() {
-    char* localWriteHead = this->getWriteHead();
-    pthread_mutex_lock(&this->writeEndMutex);
-    pthread_mutex_lock(&this->writeStartMutex);
-    this->writeStart = this->writeBuffer;
-    this->writeEnd = localWriteHead;
-    pthread_mutex_unlock(&this->writeStartMutex);
-    pthread_mutex_unlock(&this->writeEndMutex);
-}
-

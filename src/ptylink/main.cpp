@@ -19,7 +19,7 @@ int main(int argc, char** argv)
         towrite = amount;
         while(towrite > 0) {
             pty->ptyWrite(buf + (amount - towrite), towrite);
-            wamount = write(pty->masterfd, buf + (amount - towrite), towrite);
+            wamount = write(pty->masterfd_, buf + (amount - towrite), towrite);
             towrite = towrite - wamount;
         }
         sleep(1);
