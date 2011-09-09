@@ -13,7 +13,7 @@ public:
     size_t textLength() { return m_textLength; }
     size_t bufferLength() { return m_bufferLength; }
 
-    void appendCharacter(char);
+    bool appendCharacter(char);
 
 private:
     NodeType m_type;

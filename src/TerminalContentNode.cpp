@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <string>
 
-static const size_t g_textNodeBufferLength = 8000;
+static const size_t g_textNodeBufferLength = 80;
 
 TerminalContentNode::TerminalContentNode(NodeType type)
     : m_type(type)
@@ -17,9 +17,13 @@ TerminalContentNode::TerminalContentNode(NodeType type)
     }
 }
 
-void TerminalContentNode::appendCharacter(char newCharacter)
+bool TerminalContentNode::appendCharacter(char newCharacter)
 {
     //ASSERT(m_type == Text);
+    if (m_bufferLength - 1 == m_textLength)
+        return false;
+
     printf("appending %x '%c'\n", newCharacter, newCharacter);
     m_text[m_textLength++] = newCharacter;
+    return true;
 }
