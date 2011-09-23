@@ -21,7 +21,6 @@ bool TerminalContentNode::appendCharacter(char newCharacter)
     if (m_bufferLength - 1 == m_textLength)
         return false;
 
-    printf("appending %x '%c'\n", newCharacter, newCharacter);
     m_text[m_textLength++] = newCharacter;
     return true;
 }

@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+static void printDebuggingCharacter(char character);
+
 static void printAllNumbers(std::vector<int>& numbers)
 {
     for (size_t i = 0; i < numbers.size(); i++)
@@ -25,7 +27,10 @@ static void printAllNumbers(std::vector<int>& numbers)
 
     action characterMode { printf(" <-- characterMode \n"); }
 
-    action appendChar { 
+    action appendChar {
+        printf("appending 0x%x ", fc);
+        printDebuggingCharacter(fc);
+        printf("\n");
         m_client->appendCharacter(fc);
     }
 
@@ -40,6 +45,18 @@ static void printAllNumbers(std::vector<int>& numbers)
     action eraseScreenFromCursorUp { printf(" <-- eraseScreenFromCursorUp \n"); }
     action eraseEntireScreen { printf(" <-- eraseEntireScreen \n"); }
 
+    action moveCursorUpNLines { printf("<-- moveCursorUpNLines"); printAllNumbers(this->numberStack); printf("\n"); }
+    action moveCursorDownNLines { printf("<-- moveCursorDownNLines"); printAllNumbers(this->numberStack); printf("\n"); }
+    action moveCursorRightNLines { printf("<-- moveCursorRightNLines"); printAllNumbers(this->numberStack); printf("\n"); }
+    action moveCursorLeftNLines { printf("<-- moveCursorLeftNLines"); printAllNumbers(this->numberStack); printf("\n"); }
+    action moveCursorToUpperLeftCorner { printf("<-- moveCursorToUpperLeftCorner\n"); }
+    action moveCursor { printf("<-- moveCursor "); printAllNumbers(this->numberStack); printf("\n"); }
+    action moveUpOneLine { printf("<-- moveUpOneLine\n"); }
+    action moveDownOneLine { printf("<-- moveDownOneLine\n"); }
+    action moveToNextLine { printf("<-- moveToNextLine\n"); }
+    action saveCursorPositionAndAttributes { printf("<-- saveCursorPositionAndAttributes\n"); }
+    action restoreCursorPositionAndAttributes { printf("<-- restoreCursorPositionAndAttributes\n"); }
+
     action errorState {
         const char* i = start;
         printf("error state: [%x]-> %p,%p ->", fc, p, pe);
@@ -48,25 +65,7 @@ static void printAllNumbers(std::vector<int>& numbers)
                 printf("[%x]", *i);
             }
             for(i = start; i <= pe; i++) {
-                if((*i >= 0x32) && (*i <= 0x7E)) {
-                    printf("{%c}", *i);
-                }
-                else {
-                    switch(*i) {
-                        case 0:
-                            printf("{NULL}");
-                            break;
-                        case 0x8:
-                            printf("{BackSpace}");
-                            break;
-                        case 0x1B:
-                            printf("{ESC}");
-                            break;
-                        default:
-                            printf("{todo!}");
-                            break;
-                    }
-                }
+                printDebuggingCharacter(*i);
             }
             printf("\n");
         }
@@ -74,37 +73,55 @@ static void printAllNumbers(std::vector<int>& numbers)
     }
 
     unsigned_number = digit+
-                > { this->unsignedValue = 0; } 
+                > { this->unsignedValue = 0; }
                 $ { this->unsignedValue = (this->unsignedValue * 10) + (fc - '0'); }
                 % { this->numberStack.push_back(this->unsignedValue); };
 
     multiple_numeric_parameters = unsigned_number > { this->numberStack.clear(); } (';' unsigned_number )+;
 
-    CSI = 0x1B '[';
-    OSC = 0x1B ']';
+    ESC = 0x1B;
+    CSI = ESC '[';
+    OSC = ESC ']';
 
     colorChange = CSI multiple_numeric_parameters 'm' @colorChangeAction;
     characterMode = CSI unsigned_number? 'm' @characterMode;
     resetMode = CSI multiple_numeric_parameters 'l' @resetMode;
     titleChange = OSC ('0' | '1' | '2' | '3' | '4') ';' any+ :> 0x07 @setTitle;
 
-    terminalSetup = 0x1B 'c' @resetDevice
+    terminalSetup = ESC 'c' @resetDevice
         | CSI '7' 'h' @enableLineWrap
         | CSI '7' 'l' @disableLineWrap;
 
-    erase = 0x1B '[' '0'? 'K' @eraseInLineFromCursorToRight
-        | 0x1B '[' '1' 'K' @eraseInLineFromCursorToLeft
-        | 0x1B '[' '2' 'K' @eraseEntireLine
-        | 0x1B '[' '0'? 'J' @eraseScreenFromCursorDown
-        | 0x1B '[' '1' 'J' @eraseScreenFromCursorUp
-        | 0x1B '[' '2' 'J' @eraseEntireScreen;
+    erase = CSI '0'? 'K' @eraseInLineFromCursorToRight
+        | CSI '1' 'K' @eraseInLineFromCursorToLeft
+        | CSI '2' 'K' @eraseEntireLine
+        | CSI '0'? 'J' @eraseScreenFromCursorDown
+        | CSI '1' 'J' @eraseScreenFromCursorUp
+        | CSI '2' 'J' @eraseEntireScreen;
 
-    command = colorChange 
-        | resetMode 
-        | titleChange 
-        | characterMode 
+    cursor = CSI unsigned_number 'A' @moveCursorUpNLines
+        | CSI unsigned_number 'B' @moveCursorDownNLines
+        | CSI unsigned_number 'C' @moveCursorRightNLines
+        | CSI unsigned_number 'D' @moveCursorLeftNLines
+        | CSI 'H' @moveCursorToUpperLeftCorner
+        | CSI ';' 'H' @moveCursorToUpperLeftCorner
+        | CSI multiple_numeric_parameters 'H' @moveCursor
+        | CSI 'f' @moveCursorToUpperLeftCorner
+        | CSI ';' 'f' @moveCursorToUpperLeftCorner
+        | CSI multiple_numeric_parameters 'f' @moveCursor
+        | ESC 'D' @moveUpOneLine
+        | ESC 'M' @moveDownOneLine
+        | ESC 'E' @moveToNextLine
+        | ESC '7' @saveCursorPositionAndAttributes
+        | ESC '8' @restoreCursorPositionAndAttributes;
+
+    command = colorChange
+        | resetMode
+        | titleChange
+        | characterMode
         | terminalSetup
         | erase
+        | cursor
         | ^0x1B @appendChar;
 
     main := command* $err(errorState);
@@ -126,4 +143,50 @@ void VT100::parseBuffer(const char* start, const char* end)
     const char* eof = NULL;
     %%write exec;
     this->cs = cs;
+}
+
+static void printDebuggingCharacter(char character) {
+    if((character >= 0x20) && (character <= 0x7E)) {
+        printf("{%c}", character);
+        return;
+    }
+
+    switch(character) {
+    case 0x0:  printf("{NULL}"); break;
+    case 0x1:  printf("{StartOfHeading}"); break;
+    case 0x2:  printf("{StartOfText}"); break;
+    case 0x3:  printf("{EndOfText}"); break;
+    case 0x4:  printf("{EndOfTransmission}"); break;
+    case 0x5:  printf("{Enquiry}"); break;
+    case 0x6:  printf("{Acknowledgement}"); break;
+    case 0x7:  printf("{Bell}"); break;
+    case 0x8:  printf("{BackSpace}"); break;
+    case 0x9:  printf("{HorizontalTab}"); break;
+    case 0xA:  printf("{LineFeed}"); break;
+    case 0xB:  printf("{VerticalTab}"); break;
+    case 0xC:  printf("{FromFeed}"); break;
+    case 0xD:  printf("{CarriageReturn}"); break;
+    case 0xE:  printf("{ShiftOutXOn}"); break;
+    case 0xF:  printf("{ShiftInXOff}"); break;
+    case 0x10: printf("{DateLineEscape}"); break;
+    case 0x11: printf("{DeviceControl1}"); break;
+    case 0x12: printf("{DeviceControl2}"); break;
+    case 0x13: printf("{DeviceControl3}"); break;
+    case 0x14: printf("{DeviceControl4}"); break;
+    case 0x15: printf("{NegativeAcknowledgement}"); break;
+    case 0x16: printf("{SynchronousIdle}"); break;
+    case 0x17: printf("{EndOfTransmitBlock}"); break;
+    case 0x18: printf("{Cancel}"); break;
+    case 0x19: printf("{EndOfMedium}"); break;
+    case 0x1A: printf("{Substitute}"); break;
+    case 0x1B: printf("{ESC}"); break;
+    case 0x1C: printf("{FileSeparator}"); break;
+    case 0x1D: printf("{GroupSeparator}"); break;
+    case 0x1E: printf("{RecordSeparator}"); break;
+    case 0x1F: printf("{UnitSeparator}"); break;
+    case 0x7F: printf("{Delete}"); break;
+    default:
+        printf("{todo!}");
+        break;
+    }
 }
