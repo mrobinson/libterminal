@@ -41,7 +41,7 @@ ADD_CUSTOM_COMMAND(
 set(cutiepielink_sources
     build/VT100.cpp
     src/LineOrientedVT100Client.cpp
-    src/TerminalContentNode.cpp
+    src/Line.cpp
     src/pty.cpp
     src/qt/QtTerminalWindow.cpp
     src/qt/main.cpp)

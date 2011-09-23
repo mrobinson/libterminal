@@ -17,7 +17,7 @@ protected:
     virtual void characterAppended();
     virtual void somethingLargeChanged();
     void paintEvent(QPaintEvent*);
-    void renderLine(QPainter& painter, std::vector<TerminalContentNode*>* line, int& currentBaseline);
+    void renderLine(QPainter& painter, Line* line, int& currentBaseline);
 
 private:
     Pty* m_pty;

@@ -1,4 +1,5 @@
 #include "QtTerminalWindow.h"
+#include "Line.h"
 #include "../pty.h"
 #include <QKeyEvent>
 #include <QPainter>
@@ -34,16 +35,12 @@ void QtTerminalWindow::somethingLargeChanged()
     emit updateNeeded();
 }
 
-void QtTerminalWindow::renderLine(QPainter& painter, std::vector<TerminalContentNode*>* line, int& currentBaseline)
+void QtTerminalWindow::renderLine(QPainter& painter, Line* line, int& currentBaseline)
 {
     currentBaseline += m_fontMetrics->height();
 
-    int currentX = 0;
-    for (size_t i = 0; i < line->size(); i++) {
-        QString text = QString::fromUtf8(line->at(i)->text(), line->at(i)->textLength());
-        painter.drawText(currentX, currentBaseline, text);
-        currentX += m_fontMetrics->tightBoundingRect(text).width();
-    }
+    QString text = QString::fromUtf8(line->chars());
+    painter.drawText(0, currentBaseline, text);
 }
 
 void QtTerminalWindow::paintEvent(QPaintEvent* event)
