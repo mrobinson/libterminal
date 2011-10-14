@@ -10,13 +10,27 @@ QtTerminalWindow::QtTerminalWindow()
     : QFrame(NULL)
     , m_pty(NULL)
     , m_previousCharacter('\0')
+    , m_fontMetrics(0)
+    , m_font(0)
+    , m_size(80, 25)
 {
-    m_font = new QFont("Monospace");
-    m_font->setStyleHint(QFont::TypeWriter);
-    m_fontMetrics = new QFontMetrics(*m_font);
-
+    setFont(new QFont("Consolas"));
     connect(this, SIGNAL(updateNeeded()),
         this, SLOT(handleUpdateNeeded()));
+}
+
+void QtTerminalWindow::setFont(QFont* font)
+{
+    delete m_font;
+    delete m_fontMetrics;
+
+    m_font = font;
+    m_fontMetrics = new QFontMetrics(*m_font);
+
+    QSize increment(m_fontMetrics->maxWidth(), m_fontMetrics->height());
+    setSizeIncrement(increment);
+    resize(increment.width() * m_size.width(), increment.height() * m_size.height());
+
 }
 
 void QtTerminalWindow::handleUpdateNeeded()
@@ -71,4 +85,18 @@ void QtTerminalWindow::keyPressEvent(QKeyEvent* event)
        return;
     QByteArray utf8String = eventString.toUtf8();
     m_pty->ptyWrite(utf8String.data(), utf8String.length());
+}
+
+void QtTerminalWindow::setPty(Pty* pty)
+{
+    m_pty = pty;
+    m_pty->setSize(m_size.width(), m_size.height());
+}
+
+void QtTerminalWindow::resizeEvent(QResizeEvent* resizeEvent)
+{
+    if (m_pty)
+        m_pty->setSize(size().width() / sizeIncrement().width(),
+                       size().height() / sizeIncrement().height());
+    QWidget::resizeEvent(resizeEvent);
 }

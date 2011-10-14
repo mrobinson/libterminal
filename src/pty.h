@@ -35,6 +35,7 @@ public:
     PtyInitResult init(const std::string& pathToExecutable);
     int ptyWrite(const char* buffer, const int count);
     int putChar(const char character);
+    void setSize(int columns, int rows);
 
     void readWriteLoop();
 

@@ -9,21 +9,24 @@ class QtTerminalWindow : public QFrame, public LineOrientedVT100Client {
 
 public:
     QtTerminalWindow();
-    void setPty(Pty* pty) { m_pty = pty; }
+    void setPty(Pty* pty);
 
 protected:
     virtual void keyPressEvent(QKeyEvent* event);
+    virtual void resizeEvent(QResizeEvent* resizeEvent);
 
     virtual void characterAppended();
     virtual void somethingLargeChanged();
     void paintEvent(QPaintEvent*);
     void renderLine(QPainter& painter, Line* line, int& currentBaseline);
+    void setFont(QFont*);
 
 private:
     Pty* m_pty;
     char m_previousCharacter;
     QFontMetrics* m_fontMetrics;
     QFont* m_font;
+    QSize m_size;
 
 signals:
     void updateNeeded();

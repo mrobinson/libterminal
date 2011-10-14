@@ -84,14 +84,10 @@ PtyInitResult Pty::init(const std::string& pathToExecutable) {
     pid_t pid;
 
     struct termios orig_termios;
-    struct winsize size;
 
     if (interactive) {
         if (tcgetattr(STDIN_FILENO, &orig_termios) < 0) {
             return ERROR_TCGETATTR;
-        }
-        if (ioctl(STDIN_FILENO, TIOCGWINSZ, (char *) &size) < 0) {
-            return ERROR_IOCTL_TIOCGWINSZ;
         }
     }
 
@@ -156,11 +152,6 @@ PtyInitResult Pty::init(const std::string& pathToExecutable) {
             if (tcsetattr(slavefd, TCSANOW, &orig_termios) < 0) {
                 // TODO: better child error handling
                 printf("tcsetattr error on slave pty\n");
-                exit(EXIT_FAILURE);
-            }
-            if (ioctl(slavefd, TIOCSWINSZ, &size) < 0) {
-                // TODO: better child error handling
-                printf("TIOCSWINSZ error on slave pty\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -271,5 +262,12 @@ void Pty::readWriteLoop() {
 
         pthread_yield();
     }
+}
 
+void Pty::setSize(int columns, int rows)
+{
+    printf("set size: %i %i\n", columns, rows);
+    struct winsize size = { rows, columns, 0, 0};
+    if (ioctl(masterfd_, TIOCSWINSZ, &size) < 0)
+        printf("TIOCSWINSZ error on master pty\n");
 }
