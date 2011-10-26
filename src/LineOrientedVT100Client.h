@@ -22,6 +22,7 @@ protected:
 
     Line* lineAt(size_t line);
     size_t numberOfLines();
+    size_t m_cursorColumn;
 
 private:
     void appendNewLine();
@@ -29,7 +30,6 @@ private:
 
     std::vector<Line*> m_lines;
     char m_previousCharacter;
-    size_t m_cursorColumn;
 };
 
 #endif // LineOrientedVT100Client_h

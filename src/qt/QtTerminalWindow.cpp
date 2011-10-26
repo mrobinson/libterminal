@@ -95,9 +95,11 @@ void QtTerminalWindow::setPty(Pty* pty)
 
 void QtTerminalWindow::resizeEvent(QResizeEvent* resizeEvent)
 {
-    if (m_pty)
+    if (m_pty) {
+        m_cursorColumn = 1;
         m_pty->setSize(size().width() / sizeIncrement().width(),
                        size().height() / sizeIncrement().height());
+    }
     QWidget::resizeEvent(resizeEvent);
 }
 

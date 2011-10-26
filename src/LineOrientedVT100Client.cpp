@@ -4,8 +4,8 @@
 #include <cstdio>
 
 LineOrientedVT100Client::LineOrientedVT100Client()
-    : m_previousCharacter('\0')
-    , m_cursorColumn(1)
+    : m_cursorColumn(1)
+    , m_previousCharacter('\0')
 {
     appendNewLine(); // Ye olde first line.
 }

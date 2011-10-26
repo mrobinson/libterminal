@@ -207,7 +207,7 @@ static void printActionWithNumbers(const char* message, std::vector<int>& number
 
 static void printDebuggingCharacter(char character) {
     if((character >= 0x20) && (character <= 0x7E)) {
-        printf("{%c}", character);
+        //printf("{%c}", character);
         return;
     }
 
