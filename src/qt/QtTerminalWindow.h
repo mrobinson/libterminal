@@ -17,6 +17,8 @@ protected:
 
     virtual void characterAppended();
     virtual void somethingLargeChanged();
+    virtual void bell();
+
     void paintEvent(QPaintEvent*);
     void renderLine(QPainter& painter, Line* line, int& currentBaseline);
     void setFont(QFont*);

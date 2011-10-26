@@ -27,11 +27,17 @@ static void printAllNumbers(std::vector<int>& numbers)
 
     action characterMode { printf(" <-- characterMode \n"); }
 
-    action appendChar {
+    action handleChar {
         printf("appending 0x%x ", fc);
         printDebuggingCharacter(fc);
         printf("\n");
-        m_client->appendCharacter(fc);
+        switch (fc) {
+        case '\a':
+            m_client->bell();
+            break;
+        default:
+            m_client->appendCharacter(fc);
+        }
     }
 
     action resetDevice { printf(" <-- resetDevice \n"); }
@@ -122,7 +128,7 @@ static void printAllNumbers(std::vector<int>& numbers)
         | terminalSetup
         | erase
         | cursor
-        | ^0x1B @appendChar;
+        | ^0x1B @handleChar;
 
     main := command* $err(errorState);
 }%%

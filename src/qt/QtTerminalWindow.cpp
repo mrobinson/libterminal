@@ -100,3 +100,8 @@ void QtTerminalWindow::resizeEvent(QResizeEvent* resizeEvent)
                        size().height() / sizeIncrement().height());
     QWidget::resizeEvent(resizeEvent);
 }
+
+void QtTerminalWindow::bell()
+{
+    printf("BING!\n");
+}
