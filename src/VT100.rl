@@ -22,6 +22,10 @@ static void printAllNumbers(std::vector<int>& numbers)
     machine terminal;
     write data;
 
+    ESC = 0x1B;
+    CSI = ESC '[';
+    OSC = ESC ']';
+
 # Standard Escape Sequence Parameters.
 # The following are equivalent:
 #   1. ESC [ ; 4 ; 5 m
@@ -32,13 +36,15 @@ static void printAllNumbers(std::vector<int>& numbers)
 
     # clear the stack at the beginning of a new escape sequence that takes
     # parameters
-    action clearStack { this->numberStack.clear(); }
+    action clearStack {
+        this->numberStack.clear(); 
+    }
 
     # if the escape sequence that takes paramters lacks a parameter, give it
     # a parameter of zero which is generally a reset op.
-    action addNullOpAsNeeded { 
+    action addNullOpAsNeeded {
         if(this->numberStack.size() == 0) { 
-            this->numberStack.push_back(0); 
+            this->numberStack.push_back(-1); 
         }
     }
 
@@ -50,6 +56,10 @@ static void printAllNumbers(std::vector<int>& numbers)
     multiple_numeric_parameters = unsigned_number? >clearStack %addNullOpAsNeeded (';' unsigned_number)* ';'?;
 
 # Standard Escape Sequences
+
+
+    # CPR - Cursor Position Report - CSI [ Pline ; Pcolumn R 
+    # default value 1
 
     action resetMode { printf(" <-- resetMode"); printAllNumbers(this->numberStack); printf("\n"); }
 
@@ -118,9 +128,6 @@ static void printAllNumbers(std::vector<int>& numbers)
         fhold; fgoto main;
     }
 
-    ESC = 0x1B;
-    CSI = ESC '[';
-    OSC = ESC ']';
 
     characterMode = CSI multiple_numeric_parameters 'm' @characterMode;
     resetMode = CSI multiple_numeric_parameters 'l' @resetMode;
