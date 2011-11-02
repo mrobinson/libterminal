@@ -1,0 +1,1137 @@
+
+-------------------------------------------------------------------------------
+
+Table 3-10 Control Characters
+-----------------------------
+Control Character	Octal Code	Action Taken
+NUL	000	Ignored on input (not stored in input buffer; see full duplex 
+                protocol).
+ENQ	005	Transmit answerback message.
+BEL	007	Sound bell tone from keyboard.
+BS	010	Move the cursor to the left one character position, unless it 
+                is at the left margin, in which case no action occurs.
+HT	011	Move the cursor to the next tab stop, or to the right margin if
+                no further tab stops are present on the line.
+LF	012	This code causes a line feed or a new line operation. (See new 
+                line mode).
+VT	013	Interpreted as LF.
+FF	014	Interpreted as LF.
+CR	015	Move cursor to the left margin on the current line.
+SO	016	Invoke G1 character set, as designated by SCS control sequence.
+SI	017	Select G0 character set, as selected by ESC ( sequence.
+XON	021	Causes terminal to resume transmission.
+XOFF	023	Causes terminal to stop transmitted all codes except XOFF and 
+                XON.
+CAN	030	If sent during a control sequence, the sequence is immediately
+                terminated and not executed. It also causes the error character
+                to be displayed.
+SUB	032	Interpreted as CAN.
+ESC	033	Invokes a control sequence.
+DEL	177	Ignored on input (not stored in input buffer).
+
+-------------------------------------------------------------------------------
+
+Control Sequence Style
+----------------------
+
+ ESC # 6 
+
+ ESC             #                        6 
+  |              |                        |
+ Esc Character   Intermediate Character   Final Character
+
+ ESC [ 0 ; 4 ; 5 m
+
+ ESC [  0 ; 4 ; 5          m
+ |   |  |       |          |
+  \ /    \     /           |
+   |      \   /            |
+  CSI   Selective Params   Final Character
+
+Alternative sequences which will accomplish the same thing:
+
+   Sequence
+a. ESC [ ; 4 ; 5 m
+b. ESC [ m
+   ESC [ 4 m
+   ESC [ 5 m
+c. ESC [ 0 ; 04; 005 m
+
+CPR -- Cursor Position Report -- VT100 to Host
+
+ESC [ Pn ; Pn R	
+default value: 1
+
+The CPR sequence reports the active position by means of the
+parameters. This sequence has two parameter values, the first
+specifying the line and the second specifying the column. The default
+condition with no parameters present, or parameters of 0, is
+equivalent to a cursor at home position.
+
+The numbering of lines depends on the state of the Origin Mode (DECOM).
+
+This control sequence is solicited by a device status report (DSR)
+sent from the host.
+
+-------------------------------------------------------------------------------
+
+CUB -- Cursor Backward -- Host to VT100 and VT100 to Host
+
+ESC [ Pn D	
+default value: 1
+
+The CUB sequence moves the active position to the left. The distance
+moved is determined by the parameter. If the parameter value is zero
+or one, the active position is moved one position to the left. If the
+parameter value is n, the active position is moved n positions to the
+left. If an attempt is made to move the cursor to the left of the left
+margin, the cursor stops at the left margin. Editor Function
+
+-------------------------------------------------------------------------------
+
+CUD -- Cursor Down -- Host to VT100 and VT100 to Host
+
+ESC [ Pn B	
+default value: 1
+
+The CUD sequence moves the active position downward without altering
+the column position. The number of lines moved is determined by the
+parameter. If the parameter value is zero or one, the active position
+is moved one line downward. If the parameter value is n, the active
+position is moved n lines downward. In an attempt is made to move the
+cursor below the bottom margin, the cursor stops at the bottom
+margin. Editor Function
+
+-------------------------------------------------------------------------------
+
+CUF -- Cursor Forward -- Host to VT100 and VT100 to Host
+
+ESC [ Pn C	
+default value: 1
+
+The CUF sequence moves the active position to the right. The distance
+moved is determined by the parameter. A parameter value of zero or one
+moves the active position one position to the right. A parameter value
+of n moves the active position n positions to the right. If an attempt
+is made to move the cursor to the right of the right margin, the
+cursor stops at the right margin. Editor Function
+
+-------------------------------------------------------------------------------
+
+CUP -- Cursor Position
+
+ESC [ Pn ; Pn H	
+default value: 1
+
+The CUP sequence moves the active position to the position specified
+by the parameters. This sequence has two parameter values, the first
+specifying the line position and the second specifying the column
+position. A parameter value of zero or one for the first or second
+parameter moves the active position to the first line or column in the
+display, respectively. The default condition with no parameters
+present is equivalent to a cursor to home action. In the VT100, this
+control behaves identically with its format effector counterpart,
+HVP. Editor Function
+
+The numbering of lines depends on the state of the Origin Mode (DECOM).
+
+-------------------------------------------------------------------------------
+
+CUU -- Cursor Up -- Host to VT100 and VT100 to Host
+
+ESC [ Pn A	
+default value: 1
+
+Moves the active position upward without altering the column
+position. The number of lines moved is determined by the parameter. A
+parameter value of zero or one moves the active position one line
+upward. A parameter value of n moves the active position n lines
+upward. If an attempt is made to move the cursor above the top margin,
+the cursor stops at the top margin. Editor Function
+
+-------------------------------------------------------------------------------
+
+DA -- Device Attributes
+
+ESC [ Pn c	
+default value: 0
+
+1. The host requests the VT100 to send a device attributes (DA)
+   control sequence to identify itself by sending the DA control
+   sequence with either no parameter or a parameter of 0.
+
+2. Response to the request described above (VT100 to host) is
+   generated by the VT100 as a DA control sequence with the numeric
+   parameters as follows:
+
+Option Present               Sequence Sent
+--------------               -------------
+No options                   ESC [?1;0c
+Processor option (STP)       ESC [?1;1c
+Advanced video option (AVO)  ESC [?1;2c
+AVO and STP                  ESC [?1;3c
+Graphics option (GPO)        ESC [?1;4c
+GPO and STP                  ESC [?1;5c
+GPO and AVO                  ESC [?1;6c
+GPO, STP and AVO             ESC [?1;7c
+
+-------------------------------------------------------------------------------
+
+DECALN -- Screen Alignment Display (DEC Private)
+
+ESC # 8	 
+
+This command fills the entire screen area with uppercase Es for screen
+focus and alignment. This command is used by DEC manufacturing and
+Field Service personnel.
+
+-------------------------------------------------------------------------------
+
+DECANM -- ANSI/VT52 Mode (DEC Private)
+
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes only VT52 compatible
+escape sequences to be interpreted and executed. The set state causes
+only ANSI "compatible" escape and control sequences to be interpreted
+and executed.
+
+-------------------------------------------------------------------------------
+
+DECARM -- Auto Repeat Mode (DEC Private)
+
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes no keyboard keys to
+auto-repeat. The set state causes certain keyboard keys to
+auto-repeat.
+
+-------------------------------------------------------------------------------
+
+DECAWM -- Autowrap Mode (DEC Private)
+
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes any displayable
+characters received when the cursor is at the right margin to replace
+any previous characters there. The set state causes these characters
+to advance to the start of the next line, doing a scroll up if
+required and permitted.
+
+-------------------------------------------------------------------------------
+
+DECCKM -- Cursor Keys Mode (DEC Private)
+
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. This mode is only effective when the terminal
+is in keypad application mode (see DECKPAM) and the ANSI/VT52 mode
+(DECANM) is set (see DECANM). Under these conditions, if the cursor
+key mode is reset, the four cursor function keys will send ANSI cursor
+control commands. If cursor key mode is set, the four cursor function
+keys will send application functions.
+
+-------------------------------------------------------------------------------
+
+DECCOLM -- Column Mode (DEC Private)
+
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes a maximum of 80 columns
+on the screen. The set state causes a maximum of 132 columns on the
+screen.
+
+-------------------------------------------------------------------------------
+
+DECDHL -- Double Height Line (DEC Private)
+
+Top Half: ESC # 3	 
+Bottom Half: ESC # 4
+	 
+These sequences cause the line containing the active position to
+become the top or bottom half of a double-height double-width
+line. The sequences must be used in pairs on adjacent lines and the
+same character output must be sent to both lines to form full
+double-height characters. If the line was single-width single-height,
+all characters to the right of the center of the screen are lost. The
+cursor remains over the same character position unless it would be to
+the right of the right margin, in which case it is moved to the right
+margin.
+
+NOTE: The use of double-width characters reduces the number of
+characters per line by half.
+
+-------------------------------------------------------------------------------
+
+DECDWL -- Double-Width Line (DEC Private)
+
+ESC # 6	 
+
+This causes the line that contains the active position to become
+double-width single-height. If the line was single-width
+single-height, all characters to the right of the screen are lost. The
+cursor remains over the same character position unless it would be to
+the right of the right margin, in which case, it is moved to the right
+margin.
+
+NOTE: The use of double-width characters reduces the number of
+characters per line by half.
+
+-------------------------------------------------------------------------------
+
+DECID -- Identify Terminal (DEC Private)
+
+ESC Z
+
+This sequence causes the same response as the ANSI device attributes
+(DA). This sequence will not be supported in future DEC terminals,
+therefore, DA should be used by any new software.
+
+-------------------------------------------------------------------------------
+
+DECINLM -- Interlace Mode (DEC Private)
+
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state (non-interlace) causes the
+video processor to display 240 scan lines per frame. The set state
+(interlace) causes the video processor to display 480 scan lines per
+frame. There is no increase in character resolution.
+
+-------------------------------------------------------------------------------
+
+DECKPAM -- Keypad Application Mode (DEC Private)
+
+ESC =	 
+
+The auxiliary keypad keys will transmit control sequences as defined
+in Tables 3-7 and 3-8.
+
+-------------------------------------------------------------------------------
+
+DECKPNM -- Keypad Numeric Mode (DEC Private)
+
+ESC >	 
+
+The auxiliary keypad keys will send ASCII codes corresponding to the
+characters engraved on the keys.
+
+-------------------------------------------------------------------------------
+
+DECLL -- Load LEDS (DEC Private)
+
+ESC [ Ps q
+default value: 0
+
+Load the four programmable LEDs on the keyboard according to the
+parameter(s).
+
+Parameter  Parameter Meaning
+---------  -----------------
+0          Clear LEDs L1 through L4
+1          Light L1
+2          Light L2
+3          Light L3
+4          Light L4
+
+LED numbers are indicated on the keyboard.
+
+-------------------------------------------------------------------------------
+
+DECOM -- Origin Mode (DEC Private)
+
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes the origin to be at the
+upper-left character position on the screen. Line and column numbers
+are, therefore, independent of current margin settings. The cursor may
+be positioned outside the margins with a cursor position (CUP) or
+horizontal and vertical position (HVP) control.
+
+The set state causes the origin to be at the upper-left character
+position within the margins. Line and column numbers are therefore
+relative to the current margin settings. The cursor is not allowed to
+be positioned outside the margins.
+
+The cursor is moved to the new home position when this mode is set or
+reset.
+
+Lines and columns are numbered consecutively, with the origin being
+line 1, column 1.
+
+-------------------------------------------------------------------------------
+
+DECRC -- Restore Cursor (DEC Private)
+
+ESC 8	 
+
+This sequence causes the previously saved cursor position, graphic
+rendition, and character set to be restored.
+
+-------------------------------------------------------------------------------
+
+DECREPTPARM -- Report Terminal Parameters
+
+ESC [ <sol>; <par>; <nbits>; <xspeed>; <rspeed>; <clkmul>; <flags> x	 
+
+These sequence parameters are explained below in the DECREQTPARM sequence.
+
+-------------------------------------------------------------------------------
+
+DECREQTPARM -- Request Terminal Parameters
+
+ESC [ <sol> x	 
+
+The sequence DECREPTPARM is sent by the terminal controller to notify
+the host of the status of selected terminal parameters. The status
+sequence may be sent when requested by the host or at the terminal's
+discretion. DECREPTPARM is sent upon receipt of a DECREQTPARM. On
+power-up or reset, the VT100 is inhibited from sending unsolicited
+reports.
+
+The meanings of the sequence parameters are:
+
+Parameter	Value	Meaning
+
+<sol>               0 or none  This message is a request (DECREQTPARM) and the 
+                               terminal will be allowed to send unsolicited 
+                               reports. (Unsolicited reports are sent when the 
+                               terminal exits the SET-UP mode).
+                    1          This message is a request; from now on the 
+                               terminal may only report in response to a 
+                               request.
+                    2          This message is a report (DECREPTPARM).
+                    3          This message is a report and the terminal is 
+                               only reporting on request.
+<par>               1          No parity set
+                    4          Parity is set and odd
+                    5          Parity is set and even
+<nbits>             1          8 bits per character
+                    2          7 bits per character
+<xspeed>, <rspeed>  0  50      Bits per second
+                    8  75
+                    16 110
+                    24 134.5
+                    32 150
+                    40 200
+                    48 300
+                    56 600
+                    64 1200
+                    72 1800
+                    80 2000
+                    88 2400
+                    96 3600
+                    104 4800
+                    112 9600
+                    120 19200
+<clkmul>            1          The bit rate multiplier is 16.
+<flags>             0-15       This value communicates the four switch values
+                               in block 5 of SET UP B, which are only visible
+                               to the user when an STP option is installed.
+                               These bits may be assigned for an STP device.
+                               The four bits are a decimal-encoded binary
+                               number.
+
+-------------------------------------------------------------------------------
+
+DECSC -- Save Cursor (DEC Private)
+
+ESC 7
+
+This sequence causes the cursor position, graphic rendition, and
+character set to be saved. (See DECRC).
+
+-------------------------------------------------------------------------------
+
+DECSCLM -- Scrolling Mode (DEC Private)
+
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes scrolls to "jump"
+instantaneously. The set state causes scrolls to be "smooth" at a
+maximum rate of six lines per second.
+
+-------------------------------------------------------------------------------
+
+DECSCNM -- Screen Mode (DEC Private)
+
+This is a private parameter applicable to set mode (SM) and reset mode
+(RM) control sequences. The reset state causes the screen to be black
+with white characters. The set state causes the screen to be white
+with black characters.
+
+-------------------------------------------------------------------------------
+
+DECSTBM -- Set Top and Bottom Margins (DEC Private)
+
+ESC [ Pn; Pn r
+default values: see below
+
+This sequence sets the top and bottom margins to define the scrolling
+region. The first parameter is the line number of the first line in
+the scrolling region; the second parameter is the line number of the
+bottom line in the scrolling region. Default is the entire screen (no
+margins). The minimum size of the scrolling region allowed is two
+lines, i.e., the top margin must be less than the bottom margin. The
+cursor is placed in the home position (see Origin Mode DECOM).
+
+-------------------------------------------------------------------------------
+
+DECSWL -- Single-width Line (DEC Private)
+
+ESC # 5	 
+
+This causes the line which contains the active position to become
+single-width single-height. The cursor remains on the same character
+position. This is the default condition for all new lines on the
+screen.
+
+-------------------------------------------------------------------------------
+
+DECTST -- Invoke Confidence Test
+
+ESC [ 2 ; Ps y	 
+
+Ps is the parameter indicating the test to be done. Ps is computed by
+taking the weight indicated for each desired test and adding them
+together. If Ps is 0, no test is performed but the VT100 is reset.
+
+Test -> Weight
+Power up self-test (ROM check sum, RAM, NVR keyboard and AVO if installed) -> 1
+Data Loop Back -> 2 (loop back connector required)
+EIA modem control test -> 4 (loop back connector required)
+Repeat Selected Test(s) indefinitely (until failure or power off) -> 8
+
+-------------------------------------------------------------------------------
+
+DSR -- Device Status Report
+
+ESC [ Ps n
+default value: 0
+
+Requests and reports the general status of the VT100 according to the
+following parameter(s).
+
+Parameter  Parameter Meaning
+---------  -----------------
+0          Response from VT100 -- Ready, No malfunctions detected (default)
+3          Response from VT100 -- Malfunction -- retry
+5          Command from host -- Please report status (using a DSR control 
+           sequence)
+6          Command from host -- Please report active position (using a CPR 
+           control sequence)
+
+DSR with a parameter value of 0 or 3 is always sent as a response to a
+requesting DSR with a parameter value of 5.
+
+-------------------------------------------------------------------------------
+
+ED -- Erase In Display
+
+ESC [ Ps J
+default value: 0
+
+This sequence erases some or all of the characters in the display
+according to the parameter. Any complete line erased by this sequence
+will return that line to single width mode. Editor Function
+
+Parameter  Parameter Meaning
+---------  -----------------
+0          Erase from the active position to the end of the screen, inclusive 
+           (default)
+1          Erase from start of the screen to the active position, inclusive
+2          Erase all of the display -- all lines are erased, changed to 
+           single-width, and the cursor does not move.
+
+-------------------------------------------------------------------------------
+
+EL -- Erase In Line
+
+ESC [ Ps K
+default value: 0
+
+Erases some or all characters in the active line according to the
+parameter. Editor Function
+
+Parameter  Parameter Meaning
+---------  -----------------
+0          Erase from the active position to the end of the line, inclusive 
+           (default)
+1          Erase from the start of the screen to the active position, inclusive
+2          Erase all of the line, inclusive
+
+-------------------------------------------------------------------------------
+
+HTS -- Horizontal Tabulation Set
+
+ESC H	 
+
+Set one horizontal stop at the active position. Format Effector
+
+-------------------------------------------------------------------------------
+
+HVP -- Horizontal and Vertical Position
+
+ESC [ Pn ; Pn f
+default value: 1
+
+Moves the active position to the position specified by the
+parameters. This sequence has two parameter values, the first
+specifying the line position and the second specifying the column. A
+parameter value of either zero or one causes the active position to
+move to the first line or column in the display, respectively. The
+default condition with no parameters present moves the active position
+to the home position. In the VT100, this control behaves identically
+with its editor function counterpart, CUP. The numbering of lines and
+columns depends on the reset or set state of the origin mode
+(DECOM). Format Effector
+
+-------------------------------------------------------------------------------
+
+IND -- Index
+
+ESC D	 
+
+This sequence causes the active position to move downward one line
+without changing the column position. If the active position is at the
+bottom margin, a scroll up is performed. Format Effector
+
+-------------------------------------------------------------------------------
+
+LNM -- Line Feed/New Line Mode
+
+This is a parameter applicable to set mode (SM) and reset mode (RM)
+control sequences. The reset state causes the interpretation of the
+line feed (LF), defined in ANSI Standard X3.4-1977, to imply only
+vertical movement of the active position and causes the RETURN key
+(CR) to send the single code CR. The set state causes the LF to imply
+movement to the first position of the following line and causes the
+RETURN key to send the two codes (CR, LF). This is the New Line (NL)
+option.
+
+This mode does not affect the index (IND), or next line (NEL) format effectors.
+
+-------------------------------------------------------------------------------
+
+NEL -- Next Line
+
+ESC E	 
+
+This sequence causes the active position to move to the first position
+on the next line downward. If the active position is at the bottom
+margin, a scroll up is performed. Format Effector
+
+-------------------------------------------------------------------------------
+
+RI -- Reverse Index
+
+ESC M	 
+
+Move the active position to the same horizontal position on the
+preceding line. If the active position is at the top margin, a scroll
+down is performed. Format Effector
+
+-------------------------------------------------------------------------------
+
+RIS -- Reset To Initial State
+
+ESC c	 
+
+Reset the VT100 to its initial state, i.e., the state it has after it
+is powered on. This also causes the execution of the power-up
+self-test and signal INIT H to be asserted briefly.
+
+-------------------------------------------------------------------------------
+
+RM -- Reset Mode
+
+ESC [ Ps ; Ps ; . . . ; Ps l
+default value: none
+
+Resets one or more VT100 modes as specified by each selective
+parameter in the parameter string. Each mode to be reset is specified
+by a separate parameter. [See Set Mode (SM) control sequence]. (See
+Modes following this section).
+
+-------------------------------------------------------------------------------
+
+SCS -- Select Character Set
+
+The appropriate G0 and G1 character sets are designated from one of
+the five possible character sets. The G0 and G1 sets are invoked by
+the codes SI and SO (shift in and shift out) respectively.
+
+G0 Sets Sequence  G1 Sets Sequence  Meaning
+----------------  ----------------  -------
+ESC ( A           ESC ) A           United Kingdom Set
+ESC ( B           ESC ) B           ASCII Set
+ESC ( 0           ESC ) 0           Special Graphics
+ESC ( 1           ESC ) 1           Alternate Character ROM Standard Character 
+                                    Set
+ESC ( 2           ESC ) 2           Alternate Character ROM Special Graphics
+
+The United Kingdom and ASCII sets conform to the "ISO international
+register of character sets to be used with escape sequences". The
+other sets are private character sets. Special graphics means that the
+graphic characters for the codes 1378 to 1768 are replaced with other
+characters. The specified character set will be used until another SCS
+is received.
+
+NOTE: Additional information concerning the SCS escape sequence may be
+obtained in ANSI standard X3.41-1974.
+
+-------------------------------------------------------------------------------
+
+SGR -- Select Graphic Rendition
+
+ESC [ Ps ; . . . ; Ps m	
+default value: 0
+
+Invoke the graphic rendition specified by the parameter(s). All
+following characters transmitted to the VT100 are rendered according
+to the parameter(s) until the next occurrence of SGR. Format Effector
+
+Parameter  Parameter Meaning
+---------  -----------------
+0          Attributes off
+1          Bold or increased intensity
+4          Underscore
+5          Blink
+7          Negative (reverse) image
+All other parameter values are ignored.
+
+With the Advanced Video Option, only one type of character attribute
+is possible as determined by the cursor selection; in that case
+specifying either the underscore or the reverse attribute will
+activate the currently selected attribute. (See cursor selection in
+Chapter 1).
+
+-------------------------------------------------------------------------------
+
+SM -- Set Mode
+
+ESC [ Ps ; . . . ; Ps h	
+default value: none
+
+Causes one or more modes to be set within the VT100 as specified by
+each selective parameter in the parameter string. Each mode to be set
+is specified by a separate parameter. A mode is considered set until
+it is reset by a reset mode (RM) control sequence.
+
+-------------------------------------------------------------------------------
+
+TBC -- Tabulation Clear
+
+ESC [ Ps g
+default value: 0
+
+Parameter  Parameter Meaning
+---------  -----------------
+0          Clear the horizontal tab stop at the active position (the default
+           case).
+3          Clear all horizontal tab stops.
+Any other parameter values are ignored. Format Effector
+
+-------------------------------------------------------------------------------
+
+MODES!!
+=======
+
+The following is a list of VT100 modes which may be changed with set
+mode (SM) and reset mode (RM) controls.
+
+ANSI Specified Modes
+--------------------
+
+Parameter  Mode Mnemonic  Mode Function
+---------  -------------  -------------
+0                         Error (ignored)
+20         LNM            Line feed new line mode
+
+DEC Private Modes
+-----------------
+
+If the first character in the parameter string is ? (77), the
+parameters are interpreted as DEC private parameters according to the
+following:
+
+Parameter  Mode Mnemonic  Mode Function
+---------  -------------  -------------
+0                         Error (ignored)
+1          DECCKM         Cursor key
+2          DECANM         ANSI/VT52
+3          DECCOLM        Column
+4          DECSCLM        Scrolling
+5          DECSCNM        Screen
+6          DECOM          Origin
+7          DECAWM         Auto wrap
+8          DECARM         Auto repeating
+9          DECINLM        Interlace
+Any other parameter values are ignored.
+
+The following modes, which are specified in the ANSI X3.64-1977
+standard, may be considered to be permanently set, permanently reset,
+or not applicable, as noted. Refer to that standard for further
+information concerning these modes.
+
+Mode Mnemonic  Mode Function              State
+-------------  -------------              -----
+CRM            Control representation     Reset
+EBM            Editing boundary           Reset
+ERM            Erasure                    Set
+FEAM           Format effector action     Reset
+FETM           Format effector transfer   Reset
+GATM           Guarded area transfer      NA
+HEM            Horizontal editing         NA
+IRM            Insertion-replacement      Reset
+KAM            Keyboard action            Reset
+MATM           Multiple area transfer     NA
+PUM            Positioning unit           Reset
+SATM           Selected area transfer     NA
+SRTM           Status reporting transfer  Reset
+TSM            Tabulation stop            Reset
+TTM            Transfer termination       NA
+VEM            Vertical editing           NA
+
+Valid VT52 Mode Control Sequences
+=================================
+
+-------------------------------------------------------------------------------
+
+Cursor Up
+
+ESC A	 
+
+Move the active position upward one position without altering the
+horizontal position. If an attempt is made to move the cursor above
+the top margin, the cursor stops at the top margin.
+
+-------------------------------------------------------------------------------
+
+Cursor Down
+
+ESC B	 
+
+Move the active position downward one position without altering the
+horizontal position. If an attempt is made to move the cursor below
+the bottom margin, the cursor stops at the bottom margin.
+
+-------------------------------------------------------------------------------
+
+Cursor Right
+
+ESC C	 
+
+Move the active position to the right. If an attempt is made to move
+the cursor to the right of the right margin, the cursor stops at the
+right margin.
+
+-------------------------------------------------------------------------------
+
+Cursor Left
+
+ESC D	 
+
+Move the active position one position to the left. If an attempt is
+made to move the cursor to the left of the left margin, the cursor
+stops at the left margin.
+
+-------------------------------------------------------------------------------
+
+Enter Graphics Mode
+
+ESC F	 
+
+Causes the special graphics character set to be used.
+
+NOTE: The special graphics characters in the VT100 are different from
+those in the VT52.
+
+-------------------------------------------------------------------------------
+
+Exit Graphics Mode
+
+ESC G	 
+
+This sequence causes the standard ASCII character set to be used.
+
+-------------------------------------------------------------------------------
+
+Cursor to Home
+
+ESC H	 
+
+Move the cursor to the home position.
+
+-------------------------------------------------------------------------------
+
+Reverse Line Feed
+
+ESC I	 
+
+Move the active position upward one position without altering the
+column position. If the active position is at the top margin, a scroll
+down is performed.
+
+-------------------------------------------------------------------------------
+
+Erase to End of Screen
+
+ESC J	 
+
+Erase all characters from the active position to the end of the
+screen. The active position is not changed.
+
+-------------------------------------------------------------------------------
+
+Erase to End of Line
+
+ESC K	 
+
+Erase all characters from the active position to the end of the
+current line. The active position is not changed.
+
+-------------------------------------------------------------------------------
+
+Direct Cursor Address
+
+ESC Y line column	 
+
+Move the cursor to the specified line and column. The line and column
+numbers are sent as ASCII codes whose values are the number plus 0378;
+e.g., 0408 refers to the first line or column, 0508 refers to the
+eighth line or column, etc.
+
+-------------------------------------------------------------------------------
+
+Identify
+
+ESC Z	 
+
+This sequence causes the terminal to send its identifier escape
+sequence to the host. This sequence is:
+
+ESC / Z
+
+-------------------------------------------------------------------------------
+
+Enter Alternate Keypad Mode
+
+ESC =	 
+
+The optional auxiliary keypad keys will send unique identifiable
+escape sequences for use by applications programs.
+
+NOTE: Information regarding options must be obtained in ANSI mode,
+using the device attributes (DA) control sequences.
+
+-------------------------------------------------------------------------------
+
+Exit Alternate Keypad Mode
+
+ESC >	 
+
+The optional auxiliary keypad keys send the ASCII codes for the
+functions or characters engraved on the key.
+
+-------------------------------------------------------------------------------
+
+Enter ANSI Mode
+
+ESC <	 
+
+All subsequent escape sequences will be interpreted according to ANSI
+Standards X3.64-1977 and X3.41-1974. The VT52 escape sequence designed
+in this section will not be recognized.
+
+-------------------------------------------------------------------------------
+
+Control Sequence Summary
+========================
+
+The following is a summary of the VT100 control sequences.
+
+ANSI Compatible Mode
+--------------------
+
+Cursor Movement Commands
+------------------------
+
+Cursor up                      ESC [ Pn A
+Cursor down                    ESC [ Pn B
+Cursor forward (right)         ESC [ Pn C
+Cursor backward (left)         ESC [ Pn D
+Direct cursor addressing       ESC [ Pl ; Pc H† or
+                               ESC [ Pl ; Pc f†
+Index                          ESC D
+New line                       ESC E
+Reverse index                  ESC M
+Save cursor and attributes     ESC 7
+Restore cursor and attributes  ESC 8
+
+† Pl = line number; Pc = column number
+
+NOTE: Pn refers to a decimal parameter expressed as a string of ASCII
+digits. Multiple parameters are separated by the semicolon character
+(0738). If a parameter is omitted or specified to be 0 the default
+parameter value is used. For the cursor movement commands, the default
+parameter value is 1.
+
+Line Size (Double-Height and Double-Width) Commands
+---------------------------------------------------
+
+Change this line to double-height top half      ESC # 3
+Change this line to double-height bottom half   ESC # 4
+Change this line to single-width single-height  ESC # 5
+Change this line to double-width single-height  ESC # 6
+
+Character Attributes
+--------------------
+
+ESC [ Ps;Ps;Ps;...;Ps m
+
+Ps refers to a selective parameter. Multiple parameters are separated
+by the semicolon character (0738). The parameters are executed in
+order and have the following meanings:
+
+0 or None  All Attributes Off
+1          Bold on
+4          Underscore on
+5          Blink on
+7          Reverse video on
+
+Any other parameter values are ignored.
+
+Erasing
+-------
+
+From cursor to end of line          ESC [ K or ESC [ 0 K
+From beginning of line to cursor    ESC [ 1 K
+Entire line containing cursor       ESC [ 2 K
+From cursor to end of screen        ESC [ J or ESC [ 0 J
+From beginning of screen to cursor  ESC [ 1 J
+Entire screen                       ESC [ 2 J
+
+Programmable LEDs
+-----------------
+
+ESC [ Ps;Ps;...Ps q
+
+Ps are selective parameters separated by semicolons (0738) and
+executed in order, as follows:
+
+0 or None  All LEDs Off
+1          L1 On
+2          L2 On
+3          L3 On
+4          L4 On
+
+Any other parameter values are ignored.
+
+Character Sets (G0 and G1 Designators)
+--------------------------------------
+
+The G0 and G1 character sets are designated as follows:
+
+Character set                                  G0 designator  G1 designator
+-------------                                  -------------  -------------
+United Kingdom (UK)                                 ESC ( A    ESC ) A
+United States (USASCII)                             ESC ( B    ESC ) B
+Special graphics characters and line drawing set    ESC ( 0    ESC ) 0
+Alternate character ROM                             ESC ( 1    ESC ) 1
+Alternate character ROM special graphics characters ESC ( 2    ESC ) 2
+
+Scrolling Region
+----------------
+
+ESC [ Pt ; Pb r
+
+Pt is the number of the top line of the scrolling region; Pb is the
+number of the bottom line of the scrolling region and must be greater
+than Pt.
+
+Tab Stops
+---------
+
+Set tab at current column    ESC H
+Clear tab at current column  ESC [ g or ESC [ 0 g
+Clear all tabs               ESC [ 3 g
+
+Modes
+-----
+
+Mode Name	To Set	To Reset
+Mode	Sequence	Mode	Sequence
+Line feed/new line	New line	ESC [20h	Line feed	ESC [20l*
+Cursor key mode	Application	ESC [?1h	Cursor	ESC [?1l*
+ANSI/VT52 mode	ANSI	N/A	VT52	ESC [?2l*
+Column mode	132 Col	ESC [?3h	80 Col	ESC [?3l*
+Scrolling mode	Smooth	ESC [?4h	Jump	ESC [?4l*
+Screen mode	Reverse	ESC [?5h	Normal	ESC [?5l*
+Origin mode	Relative	ESC [?6h	Absolute	ESC [?6l*
+Wraparound	On	ESC [?7h	Off	ESC [?7l*
+Auto repeat	On	ESC [?8h	Off	ESC [?8l*
+Interlace	On	ESC [?9h	Off	ESC [?9l*
+Keypad mode	Application	ESC =	Numeric	ESC >
+* The last character of the sequence is a lowercase L (1548).
+
+Reports
+
+Cursor Position Report
+
+Invoked by	ESC [ 6 n
+Response is	ESC [ Pl ; Pc R †
+† Pl = line number; Pc = column number
+
+Status Report
+
+Invoked by	ESC [ 5 n
+Response is	ESC [ 0 n (terminal ok)
+ESC [ 3 n (terminal not ok)
+What Are You
+
+Invoked by	ESC [ c or ESC [ 0 c
+Response is	ESC [ ? 1 ; Ps c
+Ps is the "option present" parameter with the following meaning:
+
+Ps	Meaning
+0	Base VT100, no options
+1	Processor options (STP)
+2	Advanced video option (AVO)
+3	AVO and STP
+4	Graphics processor option (GPO)
+5	GPO and STP
+6	GPO and AVO
+7	GPO, STP, and AVO
+Alternatively invoked by ESC Z (not recommended). Response is the same.
+
+Reset
+
+Reset causes the power-up reset routine to be executed.
+
+ESC c
+
+Confidence Tests
+
+Fill Screen with "Es"	ESC # 8
+Invoke Test(s)	ESC [ 2 ; Ps y
+Ps is the parameter indicating the test to be done and is a decimal number computed by taking the "weight" indicated for each desired test and adding them together.
+
+Test	Weight
+Power-up self test (ROM checksum, RAM, NVR, keyboard and AVO if installed)	1
+Data Loop Back	2 (loop back connector required)
+EIA modem control test	4 (loop back connector required)
+Repeat selected test(s) indefinitely (until failure or power off)	8
+VT52 Compatible Mode
+
+The following is a summary of the VT100 control sequences.
+
+Cursor Up	ESC A	 
+Cursor Down	ESC B	 
+Cursor Right	ESC C	 
+Cursor Left	ESC D	 
+Select Special Graphics character set	ESC F	 
+Select ASCII character set	ESC G	 
+Cursor to home	ESC H	 
+Reverse line feed	ESC I	 
+Erase to end of screen	ESC J	 
+Erase to end of line	ESC K	 
+Direct cursor address	ESC Y l c	(see note 1)
+Identify	ESC Z	(see note 2)
+Enter alternate keypad mode	ESC =	 
+Exit alternate keypad mode	ESC >	 
+Enter ANSI mode	ESC <	 
+NOTE 1: 	Line and column numbers for direct cursor address are single character codes whose values are the desired number plus 378. Line and column numbers start at 1.
+NOTE 2: 	Response to ESC Z is ESC / Z.
