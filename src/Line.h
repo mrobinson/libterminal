@@ -11,7 +11,7 @@ public:
     void eraseFromPositionToEndOfLine(size_t position, Direction direction);
 
     char characterAt(size_t i) { return _chars[i]; }
-    char numberOfCharacters(size_t i) { return _chars.size(); }
+    size_t numberOfCharacters() { return _chars.size(); }
     const char* chars() { return _chars.c_str(); }
 
 private:

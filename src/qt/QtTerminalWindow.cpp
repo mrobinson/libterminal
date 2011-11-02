@@ -5,6 +5,7 @@
 #include <QPainter>
 #include <QtGlobal>
 #include <cstdio>
+#include <cmath>
 
 QtTerminalWindow::QtTerminalWindow()
     : QFrame(NULL)
@@ -14,7 +15,10 @@ QtTerminalWindow::QtTerminalWindow()
     , m_font(0)
     , m_size(80, 25)
 {
-    setFont(new QFont("Consolas"));
+    QFont* newFont = new QFont("Courier");
+    newFont->setFixedPitch(true);
+    setFont(newFont);
+
     connect(this, SIGNAL(updateNeeded()),
         this, SLOT(handleUpdateNeeded()));
 }
@@ -27,7 +31,10 @@ void QtTerminalWindow::setFont(QFont* font)
     m_font = font;
     m_fontMetrics = new QFontMetrics(*m_font);
 
-    QSize increment(m_fontMetrics->maxWidth(), m_fontMetrics->height());
+    // It seems that the maxWidth of the font is off by one pixel for many fixed
+    // width fonts. We likely just need to lay the font out manually, but this is
+    // a good hack for now.
+    QSize increment(m_fontMetrics->maxWidth('x') - 1, m_fontMetrics->height());
     setSizeIncrement(increment);
     resize(increment.width() * m_size.width(), increment.height() * m_size.height());
 
@@ -51,10 +58,32 @@ void QtTerminalWindow::somethingLargeChanged()
 
 void QtTerminalWindow::renderLine(QPainter& painter, Line* line, int& currentBaseline)
 {
-    currentBaseline += m_fontMetrics->height();
-
     QString text = QString::fromUtf8(line->chars());
-    painter.drawText(0, currentBaseline, text);
+    printf("full line: %s\n", text.toUtf8().data());
+    int lineLength = text.length();
+
+    while (lineLength > 0) {
+        int charactersToPaint = qMin(lineLength, m_size.width());
+        currentBaseline += m_fontMetrics->height();
+        printf("size: %i paintedchars:%i l: %i text: %s\n", m_size.width(), charactersToPaint, lineLength, text.left(charactersToPaint).toUtf8().data());
+        painter.drawText(0, currentBaseline, text.left(charactersToPaint));
+
+        lineLength -= charactersToPaint;
+        text = text.mid(charactersToPaint);
+    }
+
+    printf("\n\n");
+}
+
+void QtTerminalWindow::calculateHowManyLinesFit(int linesToDraw, int& linesThatFit, int& consumedHeight)
+{
+    int currentLine = numberOfLines() - 1;
+    while (consumedHeight < m_size.height() && linesThatFit < linesToDraw) {
+        linesThatFit++;
+        consumedHeight += ceilf(static_cast<float>(lineAt(currentLine)->numberOfCharacters()) /
+                                static_cast<float>(m_size.width()));
+        currentLine--;
+    }
 }
 
 void QtTerminalWindow::paintEvent(QPaintEvent* event)
@@ -68,8 +97,15 @@ void QtTerminalWindow::paintEvent(QPaintEvent* event)
 
     int totalLines = numberOfLines();
     int linesToDraw = qMin(totalLines, rect().height() / m_fontMetrics->height());
+
+    int linesThatFit = 0;
+    int consumedHeight = 0;
+    calculateHowManyLinesFit(linesToDraw, linesThatFit, consumedHeight);
+
     int currentBaseline = 0;
-    for (int i = linesToDraw; i > 0; i--) {
+    printf("lines that fit: %i\n", linesThatFit);
+    printf("lines tod raw: %i\n\n", linesToDraw);
+    for (int i = linesThatFit; i > 0; i--) {
         renderLine(painter, lineAt(totalLines - i), currentBaseline);
     }
 }
@@ -97,8 +133,9 @@ void QtTerminalWindow::resizeEvent(QResizeEvent* resizeEvent)
 {
     if (m_pty) {
         m_cursorColumn = 1;
-        m_pty->setSize(size().width() / sizeIncrement().width(),
+        m_size = QSize(size().width() / sizeIncrement().width(),
                        size().height() / sizeIncrement().height());
+        m_pty->setSize(m_size.width(), m_size.height());
     }
     QWidget::resizeEvent(resizeEvent);
 }

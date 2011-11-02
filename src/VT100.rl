@@ -116,10 +116,10 @@ static void printAllNumbers(std::vector<int>& numbers)
         const char* i = start;
         printf("ERROR STATE: [%x]-> %p,%p ->\n hex->", fc, fpc, pe);
         if(fpc < pe) {
-            for(i = fpc; i <= pe; i++) {
-                printf("[%x]", *i);
+            for(i = fpc - 4; i <= pe; i++) {
+                printf("[%x]", *i, *i);
             }
-			printf("\n rep->");
+            printf("\n rep->");
             for(i = fpc; i <= pe; i++) {
                 printDebuggingCharacter(*i);
             }
@@ -207,7 +207,7 @@ static void printActionWithNumbers(const char* message, std::vector<int>& number
 
 static void printDebuggingCharacter(char character) {
     if((character >= 0x20) && (character <= 0x7E)) {
-        //printf("{%c}", character);
+        printf("{%c}", character);
         return;
     }
 

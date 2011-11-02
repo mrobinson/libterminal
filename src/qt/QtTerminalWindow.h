@@ -30,6 +30,8 @@ private:
     QFont* m_font;
     QSize m_size;
 
+    void calculateHowManyLinesFit(int linesToDraw, int& linesThatFit, int& consumedHeight);
+
 signals:
     void updateNeeded();
 
