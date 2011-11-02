@@ -22,6 +22,35 @@ static void printAllNumbers(std::vector<int>& numbers)
     machine terminal;
     write data;
 
+# Standard Escape Sequence Parameters.
+# The following are equivalent:
+#   1. ESC [ ; 4 ; 5 m
+#   2. ESC [ m
+#      ESC [ 4 m
+#      ESC [ 5 m
+#   3. ESC [ 0 ; 04; 005 m
+
+    # clear the stack at the beginning of a new escape sequence that takes
+    # parameters
+    action clearStack { this->numberStack.clear(); }
+
+    # if the escape sequence that takes paramters lacks a parameter, give it
+    # a parameter of zero which is generally a reset op.
+    action addNullOpAsNeeded { 
+        if(this->numberStack.size() == 0) { 
+            this->numberStack.push_back(0); 
+        }
+    }
+
+    unsigned_number = digit+
+        > { this->unsignedValue = 0; }
+        $ { this->unsignedValue = (this->unsignedValue * 10) + (fc - '0'); }
+        % { this->numberStack.push_back(this->unsignedValue); };
+
+    multiple_numeric_parameters = unsigned_number? >clearStack %addNullOpAsNeeded (';' unsigned_number)* ';'?;
+
+# Standard Escape Sequences
+
     action resetMode { printf(" <-- resetMode"); printAllNumbers(this->numberStack); printf("\n"); }
 
     action setTitle { printAction("setTitle"); }
@@ -29,9 +58,9 @@ static void printAllNumbers(std::vector<int>& numbers)
     action characterMode { printActionWithNumbers("characterMode", this->numberStack); }
 
     action handleChar {
-        printf("appending 0x%x ", fc);
-        printDebuggingCharacter(fc);
-        printf("\n");
+        //printf("appending 0x%x ", fc);
+        //printDebuggingCharacter(fc);
+        //printf("\n");
         switch (fc) {
         case '\a':
             m_client->bell();
@@ -89,13 +118,6 @@ static void printAllNumbers(std::vector<int>& numbers)
         fhold; fgoto main;
     }
 
-    unsigned_number = digit+
-        > { this->unsignedValue = 0; }
-        $ { this->unsignedValue = (this->unsignedValue * 10) + (fc - '0'); }
-        % { this->numberStack.push_back(this->unsignedValue); };
-
-    multiple_numeric_parameters = unsigned_number? 	> { this->numberStack.clear(); } (';' unsigned_number)* ';'?;
-
     ESC = 0x1B;
     CSI = ESC '[';
     OSC = ESC ']';
@@ -145,6 +167,7 @@ static void printAllNumbers(std::vector<int>& numbers)
         | ^0x1B @handleChar;
 
     main := command* $err(errorState);
+
 }%%
 
 VT100::VT100(VT100Client* client)
@@ -166,13 +189,13 @@ void VT100::parseBuffer(const char* start, const char* end)
 }
 
 static void printAction(const char* message) {
-    //printf("<-- %s\n", message);
+    printf("<-- %s\n", message);
 }
 
 static void printActionWithNumbers(const char* message, std::vector<int>& numbers) {
-    //printf("<-- %s", message);
-    //printAllNumbers(numbers);
-    //printf("\n");
+    printf("<-- %s", message);
+    printAllNumbers(numbers);
+    printf("\n");
 }
 
 static void printDebuggingCharacter(char character) {

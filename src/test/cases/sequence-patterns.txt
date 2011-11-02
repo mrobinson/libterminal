@@ -1,0 +1,10 @@
+This text file represents multiple ways to accomplish the same thing.
+Careful editing the unnumbered lines below!
+1. ESC [ ; 4 ; 5 m
+[;4;5m
+2a. ESC [ m
+2b. ESC [ 4 m
+2c. ESC [ 5 m
+[m[4m[5m
+3. ESC [ 0 ; 04; 005 m
+[0;04;005m
