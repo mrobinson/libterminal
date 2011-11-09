@@ -26,7 +26,7 @@ static void printAllNumbers(std::vector<int>& numbers)
     CSI = ESC '[';
     OSC = ESC ']';
 
-# Standard Escape Sequence Parameters.
+# Standard VT100 Escape Sequence Parameters.
 # The following are equivalent:
 #   1. ESC [ ; 4 ; 5 m
 #   2. ESC [ m
@@ -726,6 +726,65 @@ static void printAllNumbers(std::vector<int>& numbers)
     #  by a separate parameter. [See Set Mode (SM) control sequence]. (See
     #  Modes following this section).
 
+    #  Modes:
+    #  Parameter  Mode Mnemonic  Mode Function
+    #  0                         Error (ignored)
+    #  20         LNM            Line feed new line mode
+
+    #  ANSI Specified Modes
+    #  --------------------
+
+    #  Parameter  Mode Mnemonic  Mode Function
+    #  ---------  -------------  -------------
+    #  0                         Error (ignored)
+    #  20         LNM            Line feed new line mode
+
+    #  DEC Private Modes
+    #  -----------------
+
+    #  If the first character in the parameter string is ? (77), the
+    #  parameters are interpreted as DEC private parameters according to the
+    #  following:
+
+    #  Parameter  Mode Mnemonic  Mode Function
+    #  ---------  -------------  -------------
+    #  0                         Error (ignored)
+    #  1          DECCKM         Cursor key
+    #  2          DECANM         ANSI/VT52
+    #  3          DECCOLM        Column
+    #  4          DECSCLM        Scrolling
+    #  5          DECSCNM        Screen
+    #  6          DECOM          Origin
+    #  7          DECAWM         Auto wrap
+    #  8          DECARM         Auto repeating
+    #  9          DECINLM        Interlace
+    #  Any other parameter values are ignored.
+
+    #  The following modes, which are specified in the ANSI X3.64-1977
+    #  standard, may be considered to be permanently set, permanently reset,
+    #  or not applicable, as noted. Refer to that standard for further
+    #  information concerning these modes.
+
+    #  Mode Mnemonic  Mode Function              State
+    #  -------------  -------------              -----
+    #  CRM            Control representation     Reset
+    #  EBM            Editing boundary           Reset
+    #  ERM            Erasure                    Set
+    #  FEAM           Format effector action     Reset
+    #  FETM           Format effector transfer   Reset
+    #  GATM           Guarded area transfer      NA
+    #  HEM            Horizontal editing         NA
+    #  IRM            Insertion-replacement      Reset
+    #  KAM            Keyboard action            Reset
+    #  MATM           Multiple area transfer     NA
+    #  PUM            Positioning unit           Reset
+    #  SATM           Selected area transfer     NA
+    #  SRTM           Status reporting transfer  Reset
+    #  TSM            Tabulation stop            Reset
+    #  TTM            Transfer termination       NA
+    #  VEM            Vertical editing           NA
+
+    # TODO! DEC Private Modes and ANSI Modes
     action RM {
         printActionWithNumbers("resetMode", this->numberStack); 
     }
@@ -794,6 +853,65 @@ static void printAllNumbers(std::vector<int>& numbers)
     #  is specified by a separate parameter. A mode is considered set until
     #  it is reset by a reset mode (RM) control sequence.
 
+    #  Modes:
+    #  Parameter  Mode Mnemonic  Mode Function
+    #  0                         Error (ignored)
+    #  20         LNM            Line feed new line mode
+
+    #  ANSI Specified Modes
+    #  --------------------
+
+    #  Parameter  Mode Mnemonic  Mode Function
+    #  ---------  -------------  -------------
+    #  0                         Error (ignored)
+    #  20         LNM            Line feed new line mode
+
+    #  DEC Private Modes
+    #  -----------------
+
+    #  If the first character in the parameter string is ? (77), the
+    #  parameters are interpreted as DEC private parameters according to the
+    #  following:
+
+    #  Parameter  Mode Mnemonic  Mode Function
+    #  ---------  -------------  -------------
+    #  0                         Error (ignored)
+    #  1          DECCKM         Cursor key
+    #  2          DECANM         ANSI/VT52
+    #  3          DECCOLM        Column
+    #  4          DECSCLM        Scrolling
+    #  5          DECSCNM        Screen
+    #  6          DECOM          Origin
+    #  7          DECAWM         Auto wrap
+    #  8          DECARM         Auto repeating
+    #  9          DECINLM        Interlace
+    #  Any other parameter values are ignored.
+
+    #  The following modes, which are specified in the ANSI X3.64-1977
+    #  standard, may be considered to be permanently set, permanently reset,
+    #  or not applicable, as noted. Refer to that standard for further
+    #  information concerning these modes.
+
+    #  Mode Mnemonic  Mode Function              State
+    #  -------------  -------------              -----
+    #  CRM            Control representation     Reset
+    #  EBM            Editing boundary           Reset
+    #  ERM            Erasure                    Set
+    #  FEAM           Format effector action     Reset
+    #  FETM           Format effector transfer   Reset
+    #  GATM           Guarded area transfer      NA
+    #  HEM            Horizontal editing         NA
+    #  IRM            Insertion-replacement      Reset
+    #  KAM            Keyboard action            Reset
+    #  MATM           Multiple area transfer     NA
+    #  PUM            Positioning unit           Reset
+    #  SATM           Selected area transfer     NA
+    #  SRTM           Status reporting transfer  Reset
+    #  TSM            Tabulation stop            Reset
+    #  TTM            Transfer termination       NA
+    #  VEM            Vertical editing           NA
+
+    # TODO! DEC Private Modes and ANSI Modes
     action SM {
         printActionWithNumbers("setMode", this->numberStack); 
     }
@@ -850,6 +968,185 @@ static void printAllNumbers(std::vector<int>& numbers)
         | setMode
         | tabulationClear;
 
+# Standard VT52 Escape Sequence Parameters.
+
+    # Cursor Up - ESC A    
+
+    #  Move the active position upward one position without altering the
+    #  horizontal position. If an attempt is made to move the cursor above
+    #  the top margin, the cursor stops at the top margin.
+
+    action VT52CursorUp {
+        printAction("vt52CursorUp"); 
+    }
+
+    vt52CursorUp = ESC 'A' @VT52CursorUp;
+
+    # Cursor Down - ESC B    
+
+    #  Move the active position downward one position without altering the
+    #  horizontal position. If an attempt is made to move the cursor below
+    #  the bottom margin, the cursor stops at the bottom margin.
+
+    action VT52CursorDown {
+        printAction("vt52CursorDown"); 
+    }
+
+    vt52CursorDown = ESC 'B' @VT52CursorDown;
+
+    # Cursor Right - ESC C    
+
+    #  Move the active position to the right. If an attempt is made to move
+    #  the cursor to the right of the right margin, the cursor stops at the
+    #  right margin.
+
+    action VT52CursorRight {
+        printAction("vt52CursorRight"); 
+    }
+
+    vt52CursorRight = ESC 'C' @VT52CursorRight;
+
+    # Cursor Left - ESC D    
+
+    #  Move the active position one position to the left. If an attempt is
+    #  made to move the cursor to the left of the left margin, the cursor
+    #  stops at the left margin.
+
+    action VT52CursorLeft {
+        printAction("vt52CursorLeft"); 
+    }
+
+    vt52CursorLeft = ESC 'D' @VT52CursorLeft;
+
+    # Enter Graphics Mode - ESC F    
+
+    #  Causes the special graphics character set to be used.
+
+    #  NOTE: The special graphics characters in the VT100 are different from
+    #  those in the VT52.
+
+	# TODO get those special graphics characters
+
+    action VT52EnterGraphicsMode {
+        printAction("vt52EnterGraphicsMode"); 
+    }
+
+    vt52EnterGraphicsMode = ESC 'F' @VT52EnterGraphicsMode;
+
+    # Exit Graphics Mode - ESC G    
+
+    #  This sequence causes the standard ASCII character set to be used.
+
+    action VT52ExitGraphicsMode {
+        printAction("vt52ExitGraphicsMode"); 
+    }
+
+    vt52ExitGraphicsMode = ESC 'A' @VT52ExitGraphicsMode;
+
+    # Cursor to Home - ESC H    
+
+    #  Move the cursor to the home position.
+
+    action VT52CursorToHome {
+        printAction("vt52CursorToHome"); 
+    }
+
+    vt52CursorToHome = ESC 'H' @VT52CursorToHome;
+
+    # Reverse Line Feed - ESC I    
+
+    #  Move the active position upward one position without altering the
+    #  column position. If the active position is at the top margin, a scroll
+    #  down is performed.
+
+    action VT52ReverseLineFeed {
+        printAction("vt52ReverseLineFeed"); 
+    }
+
+    vt52ReverseLineFeed = ESC 'I' @VT52ReverseLineFeed;
+
+    # Erase to End of Screen - ESC J    
+
+    #  Erase all characters from the active position to the end of the
+    #  screen. The active position is not changed.
+
+    action VT52EraseToEndOfScreen {
+        printAction("vt52EraseToEndOfScreen"); 
+    }
+
+    vt52EraseToEndOfScreen = ESC 'J' @VT52EraseToEndOfScreen;
+
+    # Erase to End of Line - ESC K    
+
+    #  Erase all characters from the active position to the end of the
+    #  current line. The active position is not changed.
+
+    action VT52EraseToEndOfLine {
+        printAction("vt52EraseToEndOfLine"); 
+    }
+
+    vt52EraseToEndOfLine = ESC 'K' @VT52EraseToEndOfLine;
+
+    # Direct Cursor Address - ESC Y line column        
+
+    #  Move the cursor to the specified line and column. The line and column
+    #  numbers are sent as ASCII codes whose values are the number plus 0378;
+    #  e.g., 0408 refers to the first line or column, 0508 refers to the
+    #  eighth line or column, etc.
+
+# TODO
+# TODO
+# TODO
+
+    # Identify - ESC Z    
+
+    #  This sequence causes the terminal to send its identifier escape
+    #  sequence to the host. This sequence is:
+
+    #  ESC / Z
+
+# ? TODO
+# TODO
+# TODO
+
+    # Enter Alternate Keypad Mode - ESC =    
+
+    #  The optional auxiliary keypad keys will send unique identifiable
+    #  escape sequences for use by applications programs.
+
+    #  NOTE: Information regarding options must be obtained in ANSI mode,
+    #  using the device attributes (DA) control sequences.
+
+# TODO conflicts with VT100 ESC =...
+# TODO conflicts with VT100 ESC =...
+# TODO conflicts with VT100 ESC =...
+
+    # Exit Alternate Keypad Mode - ESC >    
+
+    #  The optional auxiliary keypad keys send the ASCII codes for the
+    #  functions or characters engraved on the key.
+
+    # -- See VT100 control sequences. -- 
+
+    # Enter ANSI Mode - ESC <    
+
+    #  All subsequent escape sequences will be interpreted according to ANSI
+    #  Standards X3.64-1977 and X3.41-1974. The VT52 escape sequence designed
+    #  in this section will not be recognized.
+
+# TODO This escape sequence seems stateful on other escape sequences!!!
+
+    vt52 = vt52CursorUp
+        | vt52CursorDown
+        | vt52CursorRight
+        | vt52CursorLeft
+        | vt52EnterGraphicsMode
+        | vt52ExitGraphicsMode
+        | vt52CursorToHome
+        | vt52ReverseLineFeed
+        | vt52EraseToEndOfScreen
+        | vt52EraseToEndOfLine;
+
     action setTitle { printAction("setTitle"); }
 
     action handleChar {
@@ -867,13 +1164,6 @@ static void printAllNumbers(std::vector<int>& numbers)
 
     action enableLineWrap { printAction("enableLineWrap"); }
     action disableLineWrap { printAction("disableLineWrap"); }
-
-    action eraseInLineFromCursorToRight { m_client->eraseFromCursorToEndOfLine(Right); }
-    action eraseInLineFromCursorToLeft { m_client->eraseFromCursorToEndOfLine(Left); }
-    action eraseEntireLine { printAction("eraseEntireLine"); }
-    action eraseScreenFromCursorDown { printAction("eraseScreenFromCursorDown"); }
-    action eraseScreenFromCursorUp { printAction("eraseScreenFromCursorUp"); }
-    action eraseEntireScreen { printAction("eraseEntireScreen"); }
 
     action moveCursorUpNLines { printf("<-- moveCursorUpNLines"); printAllNumbers(this->numberStack); printf("\n"); }
     action moveCursorDownNLines { printf("<-- moveCursorDownNLines"); printAllNumbers(this->numberStack); printf("\n"); }
@@ -911,28 +1201,19 @@ static void printAllNumbers(std::vector<int>& numbers)
     terminalSetup = CSI '7' 'h' @enableLineWrap
         | CSI '7' 'l' @disableLineWrap;
 
-    erase = CSI '0'? 'K' @eraseInLineFromCursorToRight
-        | CSI '1' 'K' @eraseInLineFromCursorToLeft
-        | CSI '2' 'K' @eraseEntireLine
-        | CSI '0'? 'J' @eraseScreenFromCursorDown
-        | CSI '1' 'J' @eraseScreenFromCursorUp
-        | CSI '2' 'J' @eraseEntireScreen;
-
     unknown = ESC '(' 'A' @unknownSet
         | ESC '(' 'B' @unknownSet
         | ESC '(' '0' @unknownSet
         | ESC '(' '1' @unknownSet
         | ESC '(' '2' @unknownSet
-        | CSI '?' unsigned_number 'l' @unknown
-        | CSI unsigned_number ';' 'l' @unknown
         | CSI unsigned_number 'd' @unknown;
 
     command = resetMode
         | titleChange
         | terminalSetup
-        | erase
         | unknown
         | vt100
+        | vt52
         | ^0x1B @handleChar;
 
     main := command* $err(errorState);
