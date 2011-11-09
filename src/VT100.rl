@@ -1136,6 +1136,8 @@ static void printAllNumbers(std::vector<int>& numbers)
 
 # TODO This escape sequence seems stateful on other escape sequences!!!
 
+# TODO Add ANSI Sequences from terminal-info.txt
+
     vt52 = vt52CursorUp
         | vt52CursorDown
         | vt52CursorRight
@@ -1165,11 +1167,6 @@ static void printAllNumbers(std::vector<int>& numbers)
     action enableLineWrap { printAction("enableLineWrap"); }
     action disableLineWrap { printAction("disableLineWrap"); }
 
-    action moveCursorUpNLines { printf("<-- moveCursorUpNLines"); printAllNumbers(this->numberStack); printf("\n"); }
-    action moveCursorDownNLines { printf("<-- moveCursorDownNLines"); printAllNumbers(this->numberStack); printf("\n"); }
-    action moveCursorRightNLines { printf("<-- moveCursorRightNLines"); printAllNumbers(this->numberStack); printf("\n"); }
-    action moveCursorLeftNLines { printf("<-- moveCursorLeftNLines"); printAllNumbers(this->numberStack); printf("\n"); }
-    action moveCursorToUpperLeftCorner { /* printf("<-- moveCursorToUpperLeftCorner\n"); */ }
     action unknown { printAction("unknown sequence"); }
     action unknownSet { 
         /* ESC ) A United Kingdom Set
