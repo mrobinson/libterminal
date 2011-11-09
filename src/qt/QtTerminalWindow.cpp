@@ -15,7 +15,7 @@ QtTerminalWindow::QtTerminalWindow()
     , m_font(0)
     , m_size(80, 25)
 {
-    QFont* newFont = new QFont("Courier");
+    QFont* newFont = new QFont("Inconsolata");
     newFont->setFixedPitch(true);
     setFont(newFont);
 
@@ -59,20 +59,17 @@ void QtTerminalWindow::somethingLargeChanged()
 void QtTerminalWindow::renderLine(QPainter& painter, Line* line, int& currentBaseline)
 {
     QString text = QString::fromUtf8(line->chars());
-    printf("full line: %s\n", text.toUtf8().data());
     int lineLength = text.length();
 
     while (lineLength > 0) {
         int charactersToPaint = qMin(lineLength, m_size.width());
         currentBaseline += m_fontMetrics->height();
-        printf("size: %i paintedchars:%i l: %i text: %s\n", m_size.width(), charactersToPaint, lineLength, text.left(charactersToPaint).toUtf8().data());
         painter.drawText(0, currentBaseline, text.left(charactersToPaint));
 
         lineLength -= charactersToPaint;
         text = text.mid(charactersToPaint);
     }
 
-    printf("\n\n");
 }
 
 void QtTerminalWindow::calculateHowManyLinesFit(int linesToDraw, int& linesThatFit, int& consumedHeight)
@@ -103,8 +100,6 @@ void QtTerminalWindow::paintEvent(QPaintEvent* event)
     calculateHowManyLinesFit(linesToDraw, linesThatFit, consumedHeight);
 
     int currentBaseline = 0;
-    printf("lines that fit: %i\n", linesThatFit);
-    printf("lines tod raw: %i\n\n", linesToDraw);
     for (int i = linesThatFit; i > 0; i--) {
         renderLine(painter, lineAt(totalLines - i), currentBaseline);
     }
