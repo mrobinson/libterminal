@@ -36,18 +36,25 @@ static void printAllNumbers(std::vector<int>& numbers)
 
     unsigned_number = digit+
         > { this->unsignedValue = 0; }
-        $ { this->unsignedValue = (this->unsignedValue * 10) + (fc - '0'); }
-        % { this->numberStack.push_back(this->unsignedValue); };
+        $ { this->unsignedValue = (this->unsignedValue * 10) + (fc - '0'); };
 
     # TODO allow ESC [  ;  ;  m -> ESC [ -1 ; -1 ; -1 m
+    parameter_separator = ';'
+        % {
+            this->numberStack.push_back(this->unsignedValue);
+            this->unsignedValue = -1;
+        };
+
     multiple_numeric_parameters =
         unsigned_number?
-            > { this->numberStack.clear(); }
-            % {
-                if (this->numberStack.size() == 0)
-                    this->numberStack.push_back(-1);
+            > {
+                this->unsignedValue = -1;
+                this->numberStack.clear();
             }
-        (';' unsigned_number)* ';'?;
+        (parameter_separator unsigned_number?)* parameter_separator?
+            % {
+                this->numberStack.push_back(this->unsignedValue);
+            };
 
 # Standard Escape Sequences
 

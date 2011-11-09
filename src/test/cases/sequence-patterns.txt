@@ -8,3 +8,11 @@ Careful editing the unnumbered lines below!
 [m[4m[5m
 3. ESC [ 0 ; 04; 005 m
 [0;04;005m
+4. ESC [ ; ; m
+[;;m
+5. ESC [ ; 4 ; m
+[;4;m
+6. ESC [ ; ; 5 m
+[;;5m
+7. ESC [1 ; 4 ; 5 m
+[1;4;5m
