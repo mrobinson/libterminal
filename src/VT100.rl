@@ -34,28 +34,18 @@ static void printAllNumbers(std::vector<int>& numbers)
 #      ESC [ 5 m
 #   3. ESC [ 0 ; 04; 005 m
 
-    # clear the stack at the beginning of a new escape sequence that takes
-    # parameters
-    action clearStack {
-        this->numberStack.clear(); 
-    }
-
-    # if the escape sequence that takes paramters lacks a parameter, give it
-    # a parameter of zero which is generally a reset op.
-    action addNullOpAsNeeded {
-        if(this->numberStack.size() == 0) { 
-            this->numberStack.push_back(-1); 
-        }
-    }
-
     unsigned_number = digit+
         > { this->unsignedValue = 0; }
         $ { this->unsignedValue = (this->unsignedValue * 10) + (fc - '0'); }
         % { this->numberStack.push_back(this->unsignedValue); };
 
     # TODO allow ESC [  ;  ;  m -> ESC [ -1 ; -1 ; -1 m
-
-    multiple_numeric_parameters = unsigned_number? >clearStack %addNullOpAsNeeded (';' unsigned_number)* ';'?;
+    multiple_numeric_parameters = unsigned_number? (';' unsigned_number)* ';'?
+        > { this->numberStack.clear(); }
+        % {
+            if (this->numberStack.size() == 0)
+                this->numberStack.push_back(-1);
+        };
 
 # Standard Escape Sequences
 
@@ -625,11 +615,11 @@ static void printAllNumbers(std::vector<int>& numbers)
     #  1          Erase from the start of the screen to the active pos, inclusive
     #  2          Erase all of the line, inclusive
 
-    action EL {
+    action eraseInLine {
         printActionWithNumbers("eraseInLine", this->numberStack); 
     }
 
-    eraseInLine = CSI multiple_numeric_parameters 'K' @EL;
+    eraseInLine = CSI multiple_numeric_parameters 'K' @eraseInLine;
 
     # HTS - Horizontal Tabulation Set - ESC H    
 
