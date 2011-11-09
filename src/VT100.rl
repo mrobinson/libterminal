@@ -40,12 +40,14 @@ static void printAllNumbers(std::vector<int>& numbers)
         % { this->numberStack.push_back(this->unsignedValue); };
 
     # TODO allow ESC [  ;  ;  m -> ESC [ -1 ; -1 ; -1 m
-    multiple_numeric_parameters = unsigned_number? (';' unsigned_number)* ';'?
-        > { this->numberStack.clear(); }
-        % {
-            if (this->numberStack.size() == 0)
-                this->numberStack.push_back(-1);
-        };
+    multiple_numeric_parameters =
+        unsigned_number?
+            > { this->numberStack.clear(); }
+            % {
+                if (this->numberStack.size() == 0)
+                    this->numberStack.push_back(-1);
+            }
+        (';' unsigned_number)* ';'?;
 
 # Standard Escape Sequences
 
