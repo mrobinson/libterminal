@@ -903,7 +903,7 @@ static void printAllNumbers(std::vector<int>& numbers)
         printf("ERROR STATE: [%x]-> %p,%p ->\n hex->", fc, fpc, pe);
         if(fpc < pe) {
             for(i = fpc - 4; i <= pe; i++) {
-                printf("[%x]", *i, *i);
+                printf("[%x]", *i);
             }
             printf("\n rep->");
             for(i = fpc; i <= pe; i++) {

@@ -34,7 +34,7 @@ void QtTerminalWindow::setFont(QFont* font)
     // It seems that the maxWidth of the font is off by one pixel for many fixed
     // width fonts. We likely just need to lay the font out manually, but this is
     // a good hack for now.
-    QSize increment(m_fontMetrics->maxWidth('x') - 1, m_fontMetrics->height());
+    QSize increment(m_fontMetrics->maxWidth() - 1, m_fontMetrics->height());
     setSizeIncrement(increment);
     resize(increment.width() * m_size.width(), increment.height() * m_size.height());
 
