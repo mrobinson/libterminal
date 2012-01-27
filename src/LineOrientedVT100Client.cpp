@@ -60,7 +60,12 @@ size_t LineOrientedVT100Client::numberOfLines()
 
 void LineOrientedVT100Client::eraseFromCursorToEndOfLine(Direction direction)
 {
-    // ASSERT(direction == Forward || direction == Backward);
+    //ASSERT(direction == Left || direction == Right || direction == LeftAndRight);
+    if (direction == LeftAndRight) {
+        m_lines.back()->eraseFromPositionToEndOfLine(m_cursorColumn, Left);
+        m_lines.back()->eraseFromPositionToEndOfLine(m_cursorColumn, Right);
+        return;
+    }
     m_lines.back()->eraseFromPositionToEndOfLine(m_cursorColumn, direction);
     somethingLargeChanged();
 }

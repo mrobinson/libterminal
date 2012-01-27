@@ -625,7 +625,23 @@ static void printAllNumbers(std::vector<int>& numbers)
     #  2          Erase all of the line, inclusive
 
     action eraseInLine {
-        printActionWithNumbers("eraseInLine", this->numberStack); 
+        Direction direction = Right;
+        int parameter = this->numberStack.size() > 1 ? this->numberStack[0] : -1;
+
+        switch (parameter) {
+        case 0:
+            direction = Right;
+            break;
+        case 1:
+            direction = Left;
+            break;
+        case 2:
+            direction = LeftAndRight;
+            break;
+        default:
+            direction = Right;
+        }
+        m_client->eraseFromCursorToEndOfLine(direction);
     }
 
     eraseInLine = CSI multiple_numeric_parameters 'K' @eraseInLine;

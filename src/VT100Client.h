@@ -1,7 +1,7 @@
 #ifndef VT100Client_h
 #define VT100Client_h
 
-enum Direction { Left = -1, Right = 1, Up = 2, Down = 3};
+enum Direction { Left = -1, Right = 1, LeftAndRight = 2, Up = 3, Down = 4};
 enum Granularity { Character };
 
 class VT100Client {
