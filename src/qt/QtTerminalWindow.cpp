@@ -58,9 +58,15 @@ void QtTerminalWindow::somethingLargeChanged()
 
 void QtTerminalWindow::renderTextAt(const char* text, size_t numberOfCharacters, bool isCursor, int x, int y)
 {
-    QString string = QString::fromUtf8(text, numberOfCharacters);
     int realX = sizeIncrement().width() * x;
     int realY = sizeIncrement().height() * (y + 1);
+
+    if (isCursor) {
+        m_currentPainter->fillRect(QRect(QPoint(realX, realY - m_fontMetrics->ascent()), sizeIncrement()), QBrush(Qt::black));
+        return;
+    }
+
+    QString string = QString::fromUtf8(text, numberOfCharacters);
     m_currentPainter->drawText(realX, realY, text);
 }
 
@@ -113,7 +119,6 @@ void QtTerminalWindow::setPty(Pty* pty)
 void QtTerminalWindow::resizeEvent(QResizeEvent* resizeEvent)
 {
     if (m_pty) {
-        m_cursorColumn = 1;
         m_size = QSize(size().width() / sizeIncrement().width(),
                        size().height() / sizeIncrement().height());
         m_pty->setSize(m_size.width(), m_size.height());

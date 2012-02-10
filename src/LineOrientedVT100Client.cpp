@@ -5,7 +5,8 @@
 #include <math.h>
 
 LineOrientedVT100Client::LineOrientedVT100Client()
-    : m_cursorColumn(1)
+    : m_cursorColumn(-1)
+    , m_cursorRow(-1)
     , m_previousCharacter('\0')
 {
     appendNewLine(); // Ye olde first line.
@@ -20,7 +21,8 @@ LineOrientedVT100Client::~LineOrientedVT100Client()
 void LineOrientedVT100Client::appendNewLine()
 {
     m_lines.push_back(new Line());
-    m_cursorColumn = 1;
+    m_cursorColumn = 0;
+    m_cursorRow = numberOfLines() - 1;
 }
 
 void LineOrientedVT100Client::moveCursor(Direction direction, Granularity granularity)
@@ -86,16 +88,25 @@ int LineOrientedVT100Client::calculateHowManyLinesFitWithWrapping(int linesToDra
     return linesThatFit;
 }
 
-void LineOrientedVT100Client::renderLine(Line* line, int& currentBaseline)
+void LineOrientedVT100Client::renderLine(int lineNumber, int& currentBaseline)
 {
     // TODO: We are assuming ASCII here. In the future we need to use a library
     // like ICU to split the line based on characters instead of bytes.
+    Line* line = lineAt(lineNumber);
     const char* text = line->chars();
     int lineLength = strlen(text);
+    int cursorColumn = m_cursorColumn;
 
     while (lineLength > 0) {
         int charactersToPaint = std::min(lineLength, charactersWide());
         renderTextAt(text, charactersToPaint, false, 0, currentBaseline);
+
+        if (lineNumber == m_cursorRow) {
+            if (cursorColumn < charactersToPaint || charactersToPaint < charactersWide()) {
+                renderTextAt("a", 1, true, cursorColumn, currentBaseline);
+            } else
+                cursorColumn -= charactersToPaint;
+        }
 
         lineLength -= charactersToPaint;
         text += charactersToPaint;
@@ -109,7 +120,7 @@ void LineOrientedVT100Client::paint()
     int linesToDraw = calculateHowManyLinesFitWithWrapping(maximumNumberOfLinesToDraw);
 
     int currentBaseline = 0;
-    for (int i = linesToDraw; i > 0; i--) {
-        renderLine(lineAt(linesToDraw - i), currentBaseline);
+    for (size_t i = linesToDraw; i > 0; i--) {
+        renderLine(linesToDraw - i, currentBaseline);
     }
 }

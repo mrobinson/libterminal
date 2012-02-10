@@ -27,9 +27,10 @@ protected:
 
     Line* lineAt(size_t line);
     size_t numberOfLines();
-    size_t m_cursorColumn;
+    int m_cursorColumn;
+    int m_cursorRow;
 
-    void renderLine(Line* line, int& currentBaseline);
+    void renderLine(int lineNumber, int& currentBaseline);
     void paint();
 
 private:
