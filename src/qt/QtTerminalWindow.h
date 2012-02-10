@@ -12,6 +12,10 @@ public:
     void setPty(Pty* pty);
 
 protected:
+    void paintEvent(QPaintEvent*);
+    void setFont(QFont*);
+
+    // LineOrientedVT100Client implementation
     virtual void keyPressEvent(QKeyEvent* event);
     virtual void resizeEvent(QResizeEvent* resizeEvent);
 
@@ -19,9 +23,9 @@ protected:
     virtual void somethingLargeChanged();
     virtual void bell();
 
-    void paintEvent(QPaintEvent*);
-    void renderLine(QPainter& painter, Line* line, int& currentBaseline);
-    void setFont(QFont*);
+    virtual int charactersWide();
+    virtual int charactersTall();
+    virtual void renderTextAt(const char* text, size_t numberOfCharacters, bool isCursor, int x, int y);
 
 private:
     Pty* m_pty;
@@ -29,8 +33,8 @@ private:
     QFontMetrics* m_fontMetrics;
     QFont* m_font;
     QSize m_size;
+    QPainter* m_currentPainter;
 
-    void calculateHowManyLinesFit(int linesToDraw, int& linesThatFit, int& consumedHeight);
 
 signals:
     void updateNeeded();

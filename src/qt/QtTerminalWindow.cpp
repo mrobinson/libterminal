@@ -56,31 +56,22 @@ void QtTerminalWindow::somethingLargeChanged()
     emit updateNeeded();
 }
 
-void QtTerminalWindow::renderLine(QPainter& painter, Line* line, int& currentBaseline)
+void QtTerminalWindow::renderTextAt(const char* text, size_t numberOfCharacters, bool isCursor, int x, int y)
 {
-    QString text = QString::fromUtf8(line->chars());
-    int lineLength = text.length();
-
-    while (lineLength > 0) {
-        int charactersToPaint = qMin(lineLength, m_size.width());
-        currentBaseline += m_fontMetrics->height();
-        painter.drawText(0, currentBaseline, text.left(charactersToPaint));
-
-        lineLength -= charactersToPaint;
-        text = text.mid(charactersToPaint);
-    }
-
+    QString string = QString::fromUtf8(text, numberOfCharacters);
+    int realX = sizeIncrement().width() * x;
+    int realY = sizeIncrement().height() * (y + 1);
+    m_currentPainter->drawText(realX, realY, text);
 }
 
-void QtTerminalWindow::calculateHowManyLinesFit(int linesToDraw, int& linesThatFit, int& consumedHeight)
+int QtTerminalWindow::charactersWide()
 {
-    int currentLine = numberOfLines() - 1;
-    while (consumedHeight < m_size.height() && linesThatFit < linesToDraw) {
-        linesThatFit++;
-        consumedHeight += ceilf(static_cast<float>(lineAt(currentLine)->numberOfCharacters()) /
-                                static_cast<float>(m_size.width()));
-        currentLine--;
-    }
+    return m_size.width();
+}
+
+int QtTerminalWindow::charactersTall()
+{
+    return m_size.height();
 }
 
 void QtTerminalWindow::paintEvent(QPaintEvent* event)
@@ -89,20 +80,15 @@ void QtTerminalWindow::paintEvent(QPaintEvent* event)
         return;
 
     QPainter painter(this);
+    m_currentPainter = &painter;
+
     painter.fillRect(event->rect(), QBrush(Qt::white));
     painter.setFont(*m_font);
 
-    int totalLines = numberOfLines();
-    int linesToDraw = qMin(totalLines, rect().height() / m_fontMetrics->height());
+    paint();
 
-    int linesThatFit = 0;
-    int consumedHeight = 0;
-    calculateHowManyLinesFit(linesToDraw, linesThatFit, consumedHeight);
-
-    int currentBaseline = 0;
-    for (int i = linesThatFit; i > 0; i--) {
-        renderLine(painter, lineAt(totalLines - i), currentBaseline);
-    }
+    m_currentPainter = 0;
+    QFrame::paintEvent(event);
 }
 
 void QtTerminalWindow::keyPressEvent(QKeyEvent* event)

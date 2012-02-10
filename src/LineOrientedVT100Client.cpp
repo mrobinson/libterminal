@@ -2,6 +2,7 @@
 #include "Line.h"
 
 #include <cstdio>
+#include <math.h>
 
 LineOrientedVT100Client::LineOrientedVT100Client()
     : m_cursorColumn(1)
@@ -68,4 +69,47 @@ void LineOrientedVT100Client::eraseFromCursorToEndOfLine(Direction direction)
     }
     m_lines.back()->eraseFromPositionToEndOfLine(m_cursorColumn, direction);
     somethingLargeChanged();
+}
+
+int LineOrientedVT100Client::calculateHowManyLinesFitWithWrapping(int linesToDraw)
+{
+    int linesThatFit = 0;
+    int currentLine = numberOfLines() - 1;
+    int consumedHeight = 0;
+
+    while (consumedHeight < charactersTall() && linesThatFit < linesToDraw) {
+        linesThatFit++;
+        consumedHeight += ceilf(static_cast<float>(lineAt(currentLine)->numberOfCharacters()) /
+                                static_cast<float>(charactersWide()));
+        currentLine--;
+    }
+    return linesThatFit;
+}
+
+void LineOrientedVT100Client::renderLine(Line* line, int& currentBaseline)
+{
+    // TODO: We are assuming ASCII here. In the future we need to use a library
+    // like ICU to split the line based on characters instead of bytes.
+    const char* text = line->chars();
+    int lineLength = strlen(text);
+
+    while (lineLength > 0) {
+        int charactersToPaint = std::min(lineLength, charactersWide());
+        renderTextAt(text, charactersToPaint, false, 0, currentBaseline);
+
+        lineLength -= charactersToPaint;
+        text += charactersToPaint;
+        currentBaseline++;
+    }
+}
+
+void LineOrientedVT100Client::paint()
+{
+    int maximumNumberOfLinesToDraw = std::min(numberOfLines(), static_cast<size_t>(charactersWide()));
+    int linesToDraw = calculateHowManyLinesFitWithWrapping(maximumNumberOfLinesToDraw);
+
+    int currentBaseline = 0;
+    for (int i = linesToDraw; i > 0; i--) {
+        renderLine(lineAt(linesToDraw - i), currentBaseline);
+    }
 }

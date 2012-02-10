@@ -16,13 +16,21 @@ public:
     virtual void changeColor(int color1, int color2);
     virtual void eraseFromCursorToEndOfLine(Direction direction);
 
+    int calculateHowManyLinesFitWithWrapping(int linesToDraw);
+
 protected:
     virtual void characterAppended() = 0;
     virtual void somethingLargeChanged() = 0;
+    virtual int charactersWide() = 0;
+    virtual int charactersTall() = 0;
+    virtual void renderTextAt(const char* text, size_t numberOfCharacters, bool isCursor, int x, int y) = 0;
 
     Line* lineAt(size_t line);
     size_t numberOfLines();
     size_t m_cursorColumn;
+
+    void renderLine(Line* line, int& currentBaseline);
+    void paint();
 
 private:
     void appendNewLine();
