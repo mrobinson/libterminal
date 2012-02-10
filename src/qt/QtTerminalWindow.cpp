@@ -122,6 +122,7 @@ void QtTerminalWindow::resizeEvent(QResizeEvent* resizeEvent)
         m_size = QSize(size().width() / sizeIncrement().width(),
                        size().height() / sizeIncrement().height());
         m_pty->setSize(m_size.width(), m_size.height());
+        m_cursorColumn = 0;
     }
     QWidget::resizeEvent(resizeEvent);
 }

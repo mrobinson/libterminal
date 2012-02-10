@@ -20,7 +20,7 @@ void Line::eraseFromPositionToEndOfLine(size_t position, Direction direction)
 
     // ASSERT(direction == Forward || direction == Backward);
     if (direction == Right) {
-        _chars.erase(_chars.begin() + position - 1, _chars.end());
+        _chars.erase(_chars.begin() + position, _chars.end());
     } else {
         _chars.erase(_chars.begin(), _chars.begin() + position);
     }
